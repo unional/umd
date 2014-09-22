@@ -6,5 +6,5 @@
 //noinspection BadExpressionStatementJS
 ({
     name: "umd",
-    out: "build/umd.min.js"
+    out: "dist/umd.min.js"
 })
