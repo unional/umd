@@ -1,4 +1,22 @@
 {
-    "name": "umd",
-    "version": "0.3.0"
+  "name": "write-umd",
+  "version": "0.3.0",
+  "description": "Write Universal Module Definition modules with ease",
+  "main": "umd.js",
+  "scripts": {
+    "test": "karma start spec/karma.conf.js --single-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unional/umd.git"
+  },
+  "keywords": [
+    "umd"
+  ],
+  "author": "Unional <homawong@gmail.com> (http://github.com/unional)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/unional/umd/issues"
+  },
+  "homepage": "https://github.com/unional/umd"
 }
