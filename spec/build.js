@@ -7,19 +7,23 @@
 
 //noinspection BadExpressionStatementJS
 ({
-    name: "umdTestModule",
-    out: "umdTestModule.min.js",
+    name: "testModule",
+    out: "testModule.min.js",
     onBuildRead: function (moduleName, path, contents) {
         "use strict";
-        //console.log(moduleName);
-        //console.log(path);
-        //console.log(contents);
-        //var umdIndex = contents.indexOf(/umd\(/);
 
-        var newContents = contents.split("\n").splice(5).join("\n");
-        var index = newContents.lastIndexOf("}");
-        newContents = newContents.slice(0, index);
-        console.log(newContents);
-        return newContents;
+        //TODO: Support "umd ("
+        var umdIndex = contents.indexOf("umd(");
+        if (umdIndex === -1) {
+            return contents;
+        }
+
+        //TODO: Support multiple umd(...) blocks
+        //TODO: Support "define ("
+        var defineIndex = contents.indexOf("define(");
+        var bracketIndex = contents.lastIndexOf("}");
+        //console.log("DefineIndex: "+ defineIndex);
+        //console.log("BracketIndex: " + bracketIndex);
+        return contents.slice(defineIndex, bracketIndex);
     }
 })

@@ -6,7 +6,7 @@
 require('../umd');
 var assert = require('assert');
 
-var umdTestModule = require('./umdTestModule');
+var umdTestModule = require('./testModule');
 console.log(umdTestModule);
 
 assert.deepEqual(umdTestModule, { value: "umd test module value"}, "Fail to load umdTestModule");

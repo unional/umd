@@ -5,7 +5,7 @@
         <script type="text/javascript" src="lib/require-2.1.15/require.min.js"></script>
         <script type="text/javascript">
             require(['../umd'], function() {
-                require(['./umdTestModule'], function(testModule) {
+                require(['testModule'], function(testModule) {
                     alert(testModule.value);
                 });
             });
