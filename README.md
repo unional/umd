@@ -22,7 +22,7 @@ I believe the node.js way is easier to write because you typically add dependent
 
 The easiest way is to use the included live template for phpStorm/webStorm to create the boilerplate for you.
 
-If none of your modules (including the external modules) use the `umd(...)` way to define module (i.e., using the more traditional umd `(function(define) {...}((function() {...}())))`), you don't need to follow the section below for specific usage. Use `require(...)` the module you want and the will just work.
+If none of your modules (including the external modules) use the `umd(...)` way to define module (i.e., using the more traditional umd `(function(define) {...}((function() {...}())))`), you don't need to follow the section below for specific usage. Just `require(...)` the module you want and they will just work.
 
 ### Node.js
 At the beginning of your application, require the `write-umd` module before loading other modules written using `write-umd`. Since it does not have any dependency, you can safely require it first before anything else.
