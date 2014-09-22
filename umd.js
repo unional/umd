@@ -149,6 +149,7 @@
         // Node js
         //noinspection JSUnresolvedVariable
         global.umd = umd;
+        module.exports = umd;
     }
     else {
         root.umd = umd;
