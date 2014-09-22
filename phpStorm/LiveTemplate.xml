@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templateSet group="umd">
-  <template name="umdd" value="(function (define) {&#10;    &quot;use strict&quot;;&#10;    define(function(require, exports, module) {&#10;        $END$&#10;    });&#10;}((function() {&#10;    'use strict';    &#10;    if (typeof define === 'function' &amp;&amp; define.amd) {&#10;        // AMD.&#10;        return define;&#10;    } &#10;    else {&#10;        //noinspection JSUnresolvedVariable&#10;        if (typeof require === 'function') {&#10;            // Node (not CommonJS because module.exports does not conform)&#10;            return function(factory) {&#10;                //noinspection JSUnresolvedVariable&#10;                var result = factory(require, exports, module);&#10;                if (typeof result !== 'undefined') {&#10;                    //noinspection JSUnresolvedVariable&#10;                    module.exports = result;&#10;                }&#10;            }&#10;        }&#10;         else {&#10;            // Browser globals&#10;            return function(factory) {&#10;                var result = factory(umd.require, exports, module);&#10;                umd.ns(&quot;$namespace$&quot;).$filename$ = (typeof result !== 'undefined')? result : module.exports;&#10;            };&#10;        }&#10;    }&#10;}())));" description="Universal Module Definition with umd but not using umd(...)" toReformat="false" toShortenFQNames="true">
-    <variable name="namespace" expression="" defaultValue="&quot;namespace&quot;" alwaysStopAt="true" />
-    <variable name="filename" expression="fileNameWithoutExtension()" defaultValue="" alwaysStopAt="true" />
-    <context>
-      <option name="JAVA_SCRIPT" value="false" />
-      <option name="JS_EXPRESSION" value="true" />
-      <option name="JS_STATEMENT" value="true" />
-    </context>
-  </template>
-  <template name="re" value="var $name$ = require('$path$');&#10;$END$" description="require snippet" toReformat="true" toShortenFQNames="true">
-    <variable name="name" expression="" defaultValue="" alwaysStopAt="true" />
-    <variable name="path" expression="" defaultValue="" alwaysStopAt="true" />
-    <context>
-      <option name="JAVA_SCRIPT" value="true" />
-      <option name="JS_EXPRESSION" value="true" />
-      <option name="JS_STATEMENT" value="true" />
-    </context>
-  </template>
-  <template name="umd" value="umd(function(define) {&#10;    define(function(require, exports, module) {&#10;        $END$&#10;    });&#10;}, &quot;$browserGlobal$&quot;, require, exports, module);&#10;" description="Universal Module Definition using umd(...)" toReformat="false" toShortenFQNames="true">
-    <variable name="browserGlobal" expression="fileNameWithoutExtension()" defaultValue="" alwaysStopAt="true" />
-    <context>
-      <option name="JS_EXPRESSION" value="true" />
-      <option name="JS_STATEMENT" value="true" />
-    </context>
-  </template>
+    <template name="umd" value="umd(function(define) {&#10;    define(function(require, exports, module) {&#10;        $END$&#10;    });&#10;}, &quot;$browserGlobal$&quot;, require, exports, module);&#10;" description="Universal Module Definition using umd(...)" toReformat="false" toShortenFQNames="true">
+        <variable name="browserGlobal" expression="fileNameWithoutExtension()" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="JS_EXPRESSION" value="true" />
+            <option name="JS_STATEMENT" value="true" />
+        </context>
+    </template>
+    <template name="umdv" value="(function (define) {&#10;    define(function(require, exports, module) {&#10;        $END$&#10;    });&#10;}((function() {&#10;    if (typeof define === 'function' &amp;&amp; define.amd) {&#10;        // AMD.&#10;        return define;&#10;    } &#10;    else {&#10;        //noinspection JSUnresolvedVariable&#10;        if (typeof require === 'function') {&#10;            // Node (not CommonJS because module.exports does not conform)&#10;            return function(factory) {&#10;                //noinspection JSUnresolvedVariable&#10;                var result = factory(require, exports, module);&#10;                if (typeof result !== 'undefined') {&#10;                    //noinspection JSUnresolvedVariable&#10;                    module.exports = result;&#10;                }&#10;            }&#10;        }&#10;         else {&#10;            // Browser globals&#10;            return function(factory) {&#10;                //noinspection JSUnresolvedVariable&#10;                var result = factory(umd.require, exports, module);&#10;                //noinspection JSUnresolvedVariable&#10;                umd.ns(&quot;$namespace$&quot;).$filename$ = (typeof result !== 'undefined')? result : module.exports;&#10;            };&#10;        }&#10;    }&#10;}())));" description="Universal Module Definition Verbose (with umd but not using umd(...))" toReformat="false" toShortenFQNames="true">
+        <variable name="namespace" expression="" defaultValue="" alwaysStopAt="true" />
+        <variable name="filename" expression="fileNameWithoutExtension()" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="JAVA_SCRIPT" value="false" />
+            <option name="JS_EXPRESSION" value="true" />
+            <option name="JS_STATEMENT" value="true" />
+        </context>
+    </template>
+    <template name="re" value="var $name$ = require('$path$');&#10;$END$" description="require snippet" toReformat="true" toShortenFQNames="true">
+        <variable name="name" expression="" defaultValue="" alwaysStopAt="true" />
+        <variable name="path" expression="" defaultValue="" alwaysStopAt="true" />
+        <context>
+            <option name="JAVA_SCRIPT" value="true" />
+            <option name="JS_EXPRESSION" value="true" />
+            <option name="JS_STATEMENT" value="true" />
+        </context>
+    </template>
 </templateSet>
 

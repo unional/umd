@@ -4,8 +4,12 @@
         <meta charset="UTF-8">
         <script type="text/javascript" src="lib/require-2.1.15/require.min.js"></script>
         <script type="text/javascript">
+            require(['umdVerboseModule'], function(testModule) {
+                alert(testModule.value);
+            });
+
             require(['../umd'], function() {
-                require(['testModule'], function(testModule) {
+                require(['umdModule'], function(testModule) {
                     alert(testModule.value);
                 });
             });
