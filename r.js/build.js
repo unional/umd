@@ -7,19 +7,19 @@
 
 //noinspection BadExpressionStatementJS
 ({
-    name: "testModule",
-    out: "testModule.min.js",
     onBuildRead: function (moduleName, path, contents) {
-        "use strict";
+        // Add this snippet to your onBuildRead method to strip out the umd code.
+
+        //TODO: Support "umd ("
         var umdIndex = contents.indexOf("umd(");
         if (umdIndex === -1) {
             return contents;
         }
 
+        //TODO: Support multiple umd(...) blocks
+        //TODO: Support "define ("
         var defineIndex = contents.indexOf("define(");
         var bracketIndex = contents.lastIndexOf("}");
-        //console.log("DefineIndex: "+ defineIndex);
-        //console.log("BracketIndex: " + bracketIndex);
         return contents.slice(defineIndex, bracketIndex);
     }
 })
