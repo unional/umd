@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.5
+ * @version 0.3.6
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -198,7 +198,8 @@
                 stubs: stubs
             });
 
-            return context.require;
+            // Browser global does not need errback as everything are already loaded.
+            context.require(deps, callback);
         }
         else {
             // node
