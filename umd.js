@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.4
+ * @version 0.3.5
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -262,7 +262,7 @@
         };
     }
 
-//noinspection JSUnresolvedVariable
+    //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {
         // Node js
         //noinspection JSUnresolvedVariable
@@ -277,7 +277,4 @@
         root.module = root.module || undefined;
         root.exports = root.exports || undefined;
     }
-}
-(this)
-)
-;
+}(this));
