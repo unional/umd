@@ -36,20 +36,6 @@ define(function(require) {
             expect(actual).toBeUndefined();
         });
 
-        it("should work with shorthand references", function() {
-            umd.require.config({
-                map: {
-                    theThing: umd.test.something
-                }
-            });
-
-            var actual = umd.require("theThing");
-            expect(actual).toEqual(umd.test.something);
-
-            actual = umd.require("theThing.someProp");
-            expect(actual).toEqual(umd.test.something.someProp);
-        });
-
         it("should throw error if param is empty", function() {
             expect(umd.require).toThrow();
         });
@@ -68,12 +54,55 @@ define(function(require) {
                 done();
             });
         });
+
+        it("should config new context", function() {
+
+        });
+    });
+
+    describe("umd.stubRequire()", function() {
+        it("should stub according to stub input", function(done) {
+            var actual = umd.require("theThing");
+            expect(actual).toBeUndefined();
+
+            var stubRequire = umd.stubRequire({
+                theThing: umd.test.something,
+                theProp: umd.test.something.someProp
+            });
+
+            stubRequire(['theThing', 'theProp'], function(thing, prop) {
+                expect(thing).toEqual(umd.test.something);
+                expect(prop).toEqual(umd.test.something.someProp);
+                done();
+            });
+        });
+
+        it("should stub according to stub input in browser global environment", function(done) {
+            var actual = umd.require("theThing");
+            expect(actual).toBeUndefined();
+
+            // Temporary use umd.require instead of requireJS's require to mimic browser global environment.
+            var requireJSRequire = umd.globalRequire;
+            umd.globalRequire = umd.require;
+
+            var stubRequire = umd.stubRequire({
+                theThing: umd.test.something,
+                theProp: umd.test.something.someProp
+            });
+
+            stubRequire(['theThing', 'theProp'], function(thing, prop) {
+                umd.globalRequire = requireJSRequire;
+                expect(thing).toEqual(umd.test.something);
+                expect(prop).toEqual(umd.test.something.someProp);
+                done();
+            });
+        });
     });
 
     describe("umd.ns", function() {
-       it("should return undefined if param is empty.", function() {
+        it("should return undefined if param is empty.", function() {
             var actual = umd.ns();
-           expect(actual).toBeUndefined();
+            expect(actual).toBeUndefined();
         });
 
         it("should create single level namespace.", function() {

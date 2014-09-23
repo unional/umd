@@ -108,6 +108,10 @@
                typeof module === 'object';
     };
 
+    umd.isBrowserGlobal = function isBrowserGlobal() {
+        return !umd.isRequireJS() && !umd.isNodeJS();
+    };
+
     var contexts = {
         "default": newContext({})
     };
@@ -131,6 +135,53 @@
         }
     };
 
+    var contextCount = 0;
+
+    umd.stubRequire = function(stubMap) {
+        var require = umd.globalRequire;
+        if (require.defined) {
+            contextCount++;
+            var map = {};
+
+            for (var key in stubMap) {
+                if (stubMap.hasOwnProperty(key)) {
+                    var stubName = 'stub' + key + contextCount;
+                    map[key] = stubName;
+                    (function(key) {
+                        var value = stubMap[key];
+                        define(stubName, [], function() {
+                            return value;
+                        });
+                    }(key))
+                }
+            }
+
+            return require.config({
+                context: "context_" + contextCount,
+                map: {
+                    "*": map
+                },
+                baseUrl: require.s.contexts._.config.baseUrl
+            });
+        }
+        else {
+            contextCount++;
+            var stubContext = 'stub' + contextCount;
+            var context = contexts[stubContext] = newContext({
+                stubs: stubMap
+            });
+
+            return context.require;
+        }
+    };
+
+    umd.globalRequire = root.require;
+
+    /**
+     * Create new context.
+     * @param option
+     * @returns {{updateOption: Function, require: Function}}
+     */
     function newContext(option) {
         return {
             updateOption: function updateOption(newOption) {
@@ -139,8 +190,7 @@
             /**
              * A simple stub for requireJS and commonJS require function.
              * This is use to support universal module definition (umd) for browser globals code.
-             * Setup umd.require.config as a map for custom mapping.
-             * @param {string} moduleName Name of the module.
+             * @param {string|string[]} moduleName Name of the module.
              * @param {function} [callback] Function to call after resolving the module.
              * @returns {*} The target module if found; otherwise, undefined.
              */
@@ -149,36 +199,53 @@
                     throw new Error("moduleName can't be empty");
                 }
 
-                var parts = moduleName.split('!', 2);
-                var arg = undefined;
-                if (parts.length == 2) {
-                    moduleName = parts[0];
-                    if (parts[1]) {
-                        arg = parts[1];
+                if (Array.isArray(moduleName)) {
+                    var modules = moduleName.map(function(item) {
+                        return resolveModule(item);
+                    });
+
+                    if (modules && callback) {
+                        callback.apply(this, modules);
                     }
                 }
+                else {
+                    var module = resolveModule(moduleName);
 
-                var names = moduleName.split(/[.\/]/);
-                var name = names.shift();
+                    if (module && callback) {
+                        callback(module);
+                    }
 
-                // Assume moduleName starts as browser global
-                // or a shorthand defined in umd.require.config
-                var map = option.map || {};
-                var module = map[name] || root[name];
-                while (module && names.length) {
-                    name = names.shift();
-                    module = module[name];
+                    return module;
                 }
 
-                if (parts.length == 2) {
-                    module = module(arg);
-                }
+                function resolveModule(moduleName) {
+                    var parts = moduleName.split('!', 2);
+                    var arg = undefined;
+                    if (parts.length == 2) {
+                        moduleName = parts[0];
+                        if (parts[1]) {
+                            arg = parts[1];
+                        }
+                    }
 
-                if (module && callback) {
-                    callback(module);
-                }
+                    var names = moduleName.split(/[.\/]/);
+                    var name = names.shift();
 
-                return module;
+                    // Assume moduleName starts as browser global
+                    // or a shorthand defined in umd.require.config
+                    var stubs = option.stubs || {};
+                    var module = stubs[name] || root[name];
+                    while (module && names.length) {
+                        name = names.shift();
+                        module = module[name];
+                    }
+
+                    if (parts.length == 2) {
+                        module = module(arg);
+                    }
+
+                    return module;
+                }
             }
         };
     }
