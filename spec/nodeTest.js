@@ -16,3 +16,11 @@ var umdTestModule = require('./umdModule');
 console.log(umdTestModule);
 
 assert.deepEqual(umdTestModule, { value: "umd module value"}, "Fail to load umdTestModule");
+
+var thing = { someProp: "thing's value" };
+
+umd.stubRequire({
+    "theThing": thing
+})(['theThing'], function(actual) {
+    assert.deepEqual(actual, thing);
+});

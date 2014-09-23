@@ -75,7 +75,7 @@
      * @return {Object} The namespace object. (If multiple arguments are passed, this will be the last namespace created)
      * @method namespace
      */
-    umd.ns = function namespace(namespace) {
+    umd.namespace = function namespace(namespace) {
         var result;
         for (var i = 0, len = arguments.length; i < len; i++) {
             namespace = arguments[i];
@@ -92,6 +92,8 @@
 
         return result;
     };
+
+    umd.ns = umd.namespace;
 
     umd.isRequireJS = function isRequireJS() {
         return typeof define === "function" && define.amd;
@@ -140,6 +142,7 @@
     umd.stubRequire = function(stubMap) {
         var require = umd.globalRequire;
         if (require.defined) {
+            // require.js
             contextCount++;
             var map = {};
 
@@ -164,7 +167,12 @@
                 baseUrl: require.s.contexts._.config.baseUrl
             });
         }
+        else if (require) {
+            // node
+            throw new Error("stubRequire not implemented for node.js yet.");
+        }
         else {
+            // browser global
             contextCount++;
             var stubContext = 'stub' + contextCount;
             var context = contexts[stubContext] = newContext({
@@ -175,7 +183,13 @@
         }
     };
 
-    umd.globalRequire = root.require;
+    if (typeof require === "function") {
+        // node
+        umd.globalRequire = require;
+    }
+    else {
+        umd.globalRequire = root.require;
+    }
 
     /**
      * Create new context.
@@ -231,8 +245,6 @@
                     var names = moduleName.split(/[.\/]/);
                     var name = names.shift();
 
-                    // Assume moduleName starts as browser global
-                    // or a shorthand defined in umd.require.config
                     var stubs = option.stubs || {};
                     var module = stubs[name] || root[name];
                     while (module && names.length) {
@@ -250,7 +262,7 @@
         };
     }
 
-    //noinspection JSUnresolvedVariable
+//noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {
         // Node js
         //noinspection JSUnresolvedVariable
@@ -265,4 +277,7 @@
         root.module = root.module || undefined;
         root.exports = root.exports || undefined;
     }
-}(this));
+}
+(this)
+)
+;
