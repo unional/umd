@@ -105,7 +105,7 @@
      * This is tested for browser global and require.js.
      * It does not work for node.js yet because the module object in this scope is different than in the actual module
      * @param factory
-     * @param browserGlobalIdentifier
+     * @param {string|null} browserGlobalIdentifier Identifier for browser global. Pass in falsy value to omit browser global definition.
      * @param require Round trip require function (pre-defined)
      * @param exports Round trip exports object (pre-defined)
      * @param module Round trip module object (pre-defined)
@@ -132,11 +132,14 @@
             else {
                 // browser global.
                 factory(function(definition) {
-                    var terms = browserGlobalIdentifier.split(/[.\/]/);
-                    var id = terms.pop();
-                    var base = namespace(terms.join("."));
                     var result = definition(umdRequire, exports, module);
-                    base[id] = (typeof result !== 'undefined')? result : module.exports;
+
+                    if (browserGlobalIdentifier) {
+                        var terms = browserGlobalIdentifier.split(/[.\/]/);
+                        var id = terms.pop();
+                        var base = namespace(terms.join("."));
+                        base[id] = (typeof result !== 'undefined')? result : module.exports;
+                    }
                 });
             }
         }
