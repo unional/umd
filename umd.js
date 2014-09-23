@@ -7,99 +7,6 @@
 //noinspection ThisExpressionReferencesGlobalObjectJS
 (function(root) {
     "use strict";
-    function isRequireJS() {
-        return typeof define === "function" && define.amd;
-    }
-
-    /**
-     * Determine whether the environment is node.js
-     * Technically this is also true for CommonJS but I named it as NodeJS because
-     * I don't fully support CommonJS yet.
-     * @returns {boolean}
-     */
-    function isNodeJS() {
-        return typeof require === "function" &&
-               typeof exports === 'object' &&
-               typeof module === 'object';
-    }
-
-    /**
-     * Creates namespaces to be used for scoping variables and classes so that they are not global.
-     * Specifying the last node of a namespace implicitly creates all other nodes.
-     * Similar to Ext.ns() without the dependency.
-     * @param {...string} namespace
-     * @return {Object} The namespace object. (If multiple arguments are passed, this will be the last namespace created)
-     * @method namespace
-     */
-    function namespace(namespace) {
-        var result;
-        for (var i = 0, len = arguments.length; i < len; i++) {
-            namespace = arguments[i];
-            var components = namespace.split(/[.\/]/);
-
-            var component = components.shift();
-            result = root[component] = root[component] || {};
-
-            while (components.length) {
-                component = components.shift();
-                result = result[component] = result[component] || {};
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * A simple stub for requireJS and commonJS require function.
-     * This is use to support universal module definition (umd) for browser globals code.
-     * Setup umd.require.config as a map for custom mapping.
-     * @param {string} moduleName Name of the module.
-     * @param {function} [callback] Function to call after resolving the module.
-     * @returns {*} The target module if found; otherwise, undefined.
-     */
-    var umdRequire = function(moduleName, callback) {
-        if (!moduleName) {
-            throw new Error("moduleName can't be empty");
-        }
-
-        var parts = moduleName.split('!', 2);
-        var arg = undefined;
-        if (parts.length == 2) {
-            moduleName = parts[0];
-            if (parts[1]) {
-                arg = parts[1];
-            }
-        }
-
-        var names = moduleName.split(/[.\/]/);
-        var name = names.shift();
-
-        // Assume moduleName starts as browser global
-        // or a shorthand defined in umd.require.config
-        var config = umdRequire.config;
-        var module = config[name] || root[name];
-        while (module && names.length) {
-            name = names.shift();
-            module = module[name];
-        }
-
-        if (parts.length == 2) {
-            module = module(arg);
-        }
-
-        if (module && callback) {
-            callback(module);
-        }
-
-        return module;
-    };
-
-    /**
-     * Config object similar to require.js paths option.
-     * FUTURE: Support . syntax ("bootstrap.modal").
-     * @type {{}}
-     */
-    umdRequire.config = {};
 
     /**
      * Universal module definition method. Use this method to simplify module definition.
@@ -153,17 +60,128 @@
                 if (browserGlobalIdentifier) {
                     var terms = browserGlobalIdentifier.split(/[.\/]/);
                     var id = terms.pop();
-                    var base = namespace(terms.join("."));
+                    var base = umd.ns(terms.join("."));
                     base[id] = (typeof result !== 'undefined') ? result : module.exports;
                 }
             });
         }
     };
 
-    umd.ns = namespace;
-    umd.require = umdRequire;
-    umd.isRequireJS = isRequireJS;
-    umd.isNodeJS = isNodeJS;
+    /**
+     * Creates namespaces to be used for scoping variables and classes so that they are not global.
+     * Specifying the last node of a namespace implicitly creates all other nodes.
+     * Similar to Ext.ns() without the dependency.
+     * @param {...string} namespace
+     * @return {Object} The namespace object. (If multiple arguments are passed, this will be the last namespace created)
+     * @method namespace
+     */
+    umd.ns = function namespace(namespace) {
+        var result;
+        for (var i = 0, len = arguments.length; i < len; i++) {
+            namespace = arguments[i];
+            var components = namespace.split(/[.\/]/);
+
+            var component = components.shift();
+            result = root[component] = root[component] || {};
+
+            while (components.length) {
+                component = components.shift();
+                result = result[component] = result[component] || {};
+            }
+        }
+
+        return result;
+    };
+
+    umd.isRequireJS = function isRequireJS() {
+        return typeof define === "function" && define.amd;
+    };
+    /**
+     * Determine whether the environment is node.js
+     * Technically this is also true for CommonJS but I named it as NodeJS because
+     * I don't fully support CommonJS yet.
+     * @returns {boolean}
+     */
+    umd.isNodeJS = function isNodeJS() {
+        return typeof require === "function" &&
+               typeof exports === 'object' &&
+               typeof module === 'object';
+    };
+
+    var contexts = {
+        "default": newContext({})
+    };
+
+    umd.require = contexts.default.require;
+
+    /**
+     * Config require similar to requireJS.
+     * @param {object} option Config option.
+     * @param {string} [option.context] Context name. If not specified, it modifies the default context.
+     * @param {object} [option.map] Map shorthands.
+     * @returns {*}
+     */
+    umd.require.config = function(option) {
+        if (option.context) {
+            return contexts[option.context] = contexts[option.context] || newContext(option);
+        }
+        else {
+            contexts.default.updateOption(option);
+            return contexts.default.require;
+        }
+    };
+
+    function newContext(option) {
+        return {
+            updateOption: function updateOption(newOption) {
+                option = newOption;
+            },
+            /**
+             * A simple stub for requireJS and commonJS require function.
+             * This is use to support universal module definition (umd) for browser globals code.
+             * Setup umd.require.config as a map for custom mapping.
+             * @param {string} moduleName Name of the module.
+             * @param {function} [callback] Function to call after resolving the module.
+             * @returns {*} The target module if found; otherwise, undefined.
+             */
+            require: function require(moduleName, callback) {
+                if (!moduleName) {
+                    throw new Error("moduleName can't be empty");
+                }
+
+                var parts = moduleName.split('!', 2);
+                var arg = undefined;
+                if (parts.length == 2) {
+                    moduleName = parts[0];
+                    if (parts[1]) {
+                        arg = parts[1];
+                    }
+                }
+
+                var names = moduleName.split(/[.\/]/);
+                var name = names.shift();
+
+                // Assume moduleName starts as browser global
+                // or a shorthand defined in umd.require.config
+                var map = option.map || {};
+                var module = map[name] || root[name];
+                while (module && names.length) {
+                    name = names.shift();
+                    module = module[name];
+                }
+
+                if (parts.length == 2) {
+                    module = module(arg);
+                }
+
+                if (module && callback) {
+                    callback(module);
+                }
+
+                return module;
+            }
+        };
+    }
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {

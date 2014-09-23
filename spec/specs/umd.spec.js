@@ -37,9 +37,11 @@ define(function(require) {
         });
 
         it("should work with shorthand references", function() {
-            umd.require.config = {
-                theThing: umd.test.something
-            };
+            umd.require.config({
+                map: {
+                    theThing: umd.test.something
+                }
+            });
 
             var actual = umd.require("theThing");
             expect(actual).toEqual(umd.test.something);
