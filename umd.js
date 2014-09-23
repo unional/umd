@@ -6,7 +6,23 @@
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
 (function(root) {
-    //"use strict";
+    "use strict";
+    function isRequireJS() {
+        return typeof define === "function" && define.amd;
+    }
+
+    /**
+     * Determine whether the environment is node.js
+     * Technically this is also true for CommonJS but I named it as NodeJS because
+     * I don't fully support CommonJS yet.
+     * @returns {boolean}
+     */
+    function isNodeJS() {
+        return typeof require === "function" &&
+               typeof exports === 'object' &&
+               typeof module === 'object';
+    }
+
     /**
      * Creates namespaces to be used for scoping variables and classes so that they are not global.
      * Specifying the last node of a namespace implicitly creates all other nodes.
@@ -110,47 +126,44 @@
      * @param exports Round trip exports object (pre-defined)
      * @param module Round trip module object (pre-defined)
      */
-    var umd = function (factory, browserGlobalIdentifier, require, exports, module) {
-        if (typeof define === 'function' && define.amd) {
+    var umd = function(factory, browserGlobalIdentifier, require, exports, module) {
+        if (umd.isRequireJS()) {
             factory(define);
         }
-        else {
-            //noinspection JSUnresolvedVariable
-            if (typeof require === "function" &&
-                typeof exports === 'object' &&
-                typeof module === 'object') {
-                // Node (not CommonJS because module.exports does not conform)
-                factory(function(definition) {
+        else if (umd.isNodeJS()) {
+            // Node (not CommonJS because module.exports does not conform)
+            factory(function(definition) {
+                //noinspection JSUnresolvedVariable
+                var result = definition(require, exports, module);
+                if (typeof result !== "undefined") {
                     //noinspection JSUnresolvedVariable
-                    var result = definition(require, exports, module);
-                    if (typeof result !== "undefined") {
-                        //noinspection JSUnresolvedVariable
-                        module.exports = result;
-                    }
-                });
-            }
-            else {
-                // browser global.
-                factory(function(definition) {
-                    // umd assigns window.module and window.exports to undefined,
-                    // which passed in by the module definition to this method.
-                    // Assign it locally to mimic their functionality.
-                    module = { exports: {} };
-                    var result = definition(umdRequire, module.exports, module);
+                    module.exports = result;
+                }
+            });
+        }
+        else {
+            // browser global.
+            factory(function(definition) {
+                // umd assigns window.module and window.exports to undefined,
+                // which passed in by the module definition to this method.
+                // Assign it locally to mimic their functionality.
+                module = {exports: {}};
+                var result = definition(umd.require, module.exports, module);
 
-                    if (browserGlobalIdentifier) {
-                        var terms = browserGlobalIdentifier.split(/[.\/]/);
-                        var id = terms.pop();
-                        var base = namespace(terms.join("."));
-                        base[id] = (typeof result !== 'undefined')? result : module.exports;
-                    }
-                });
-            }
+                if (browserGlobalIdentifier) {
+                    var terms = browserGlobalIdentifier.split(/[.\/]/);
+                    var id = terms.pop();
+                    var base = namespace(terms.join("."));
+                    base[id] = (typeof result !== 'undefined') ? result : module.exports;
+                }
+            });
         }
     };
 
     umd.ns = namespace;
     umd.require = umdRequire;
+    umd.isRequireJS = isRequireJS;
+    umd.isNodeJS = isNodeJS;
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {
