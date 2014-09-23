@@ -61,20 +61,25 @@ define(function(require) {
     });
 
     describe("umd.stubRequire()", function() {
+        it("should throw error if deps is not array", function() {
+            expect(umd.stubRequire).toThrow();
+        });
+
         it("should stub according to stub input", function(done) {
             var actual = umd.require("theThing");
             expect(actual).toBeUndefined();
 
-            var stubRequire = umd.stubRequire({
-                theThing: umd.test.something,
-                theProp: umd.test.something.someProp
-            });
-
-            stubRequire(['theThing', 'theProp'], function(thing, prop) {
-                expect(thing).toEqual(umd.test.something);
-                expect(prop).toEqual(umd.test.something.someProp);
-                done();
-            });
+            umd.stubRequire(
+                ['theThing', 'theProp'],
+                {
+                    theThing: umd.test.something,
+                    theProp: umd.test.something.someProp
+                },
+                function(thing, prop) {
+                    expect(thing).toEqual(umd.test.something);
+                    expect(prop).toEqual(umd.test.something.someProp);
+                    done();
+                });
         });
 
         it("should stub according to stub input in browser global environment", function(done) {
@@ -85,17 +90,18 @@ define(function(require) {
             var requireJSRequire = umd.globalRequire;
             umd.globalRequire = umd.require;
 
-            var stubRequire = umd.stubRequire({
-                theThing: umd.test.something,
-                theProp: umd.test.something.someProp
-            });
-
-            stubRequire(['theThing', 'theProp'], function(thing, prop) {
-                umd.globalRequire = requireJSRequire;
-                expect(thing).toEqual(umd.test.something);
-                expect(prop).toEqual(umd.test.something.someProp);
-                done();
-            });
+            umd.stubRequire(
+                ['theThing', 'theProp'],
+                {
+                    theThing: umd.test.something,
+                    theProp: umd.test.something.someProp
+                },
+                function(thing, prop) {
+                    umd.globalRequire = requireJSRequire;
+                    expect(thing).toEqual(umd.test.something);
+                    expect(prop).toEqual(umd.test.something.someProp);
+                    done();
+                });
         });
     });
 

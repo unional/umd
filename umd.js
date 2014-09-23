@@ -139,19 +139,31 @@
 
     var contextCount = 0;
 
-    umd.stubRequire = function(stubMap) {
+    /**
+     * Requiring dependencies while injects specified stubs.
+     * @param {[]} deps Dependencies
+     * @param {object} stubs Stubs `{ "moduleA": stubA }`
+     * @param {function} callback The callback function.
+     * @param {function} [errback] The error back function.
+     * @returns {Function|*}
+     */
+    umd.stubRequire = function(deps, stubs, callback, errback) {
+        if (!Array.isArray(deps)) {
+            throw new Error("Dependencies must be an array.");
+        }
+
         var require = umd.globalRequire;
         if (require.defined) {
             // require.js
             contextCount++;
             var map = {};
 
-            for (var key in stubMap) {
-                if (stubMap.hasOwnProperty(key)) {
+            for (var key in stubs) {
+                if (stubs.hasOwnProperty(key)) {
                     var stubName = 'stub' + key + contextCount;
                     map[key] = stubName;
                     (function(key) {
-                        var value = stubMap[key];
+                        var value = stubs[key];
                         define(stubName, [], function() {
                             return value;
                         });
@@ -159,27 +171,38 @@
                 }
             }
 
-            return require.config({
-                context: "context_" + contextCount,
+            var contextName = "context_" + contextCount;
+            var result = require.config({
+                context: contextName,
                 map: {
                     "*": map
                 },
-                baseUrl: require.s.contexts._.config.baseUrl
+                baseUrl: require.s.contexts._.config.baseUrl,
+                paths: require.s.contexts._.config.paths
             });
+
+            var parentDefined = require.s.contexts._.defined;
+            for (var m in parentDefined) {
+                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
+                    require.s.contexts[contextName].defined[m] = parentDefined[m];
+                }
+            }
+
+            result(deps, callback, errback);
         }
-        else if (require) {
-            // node
-            throw new Error("stubRequire not implemented for node.js yet.");
-        }
-        else {
+        else if (require === umd.require) {
             // browser global
             contextCount++;
             var stubContext = 'stub' + contextCount;
             var context = contexts[stubContext] = newContext({
-                stubs: stubMap
+                stubs: stubs
             });
 
             return context.require;
+        }
+        else {
+            // node
+            throw new Error("stubRequire not implemented for node.js yet.");
         }
     };
 
