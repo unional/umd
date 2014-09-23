@@ -104,4 +104,15 @@ define(function(require) {
             expect(TestC.D.E === actual).toBeTruthy();
         });
     });
+
+    describe("umd", function() {
+        it("should allow environment still be determined as amd", function() {
+            if (typeof define === "function" && define.amd) {
+                expect(
+                    typeof require === "function" &&
+                    typeof exports === "object" &&
+                    typeof module === "object").toBe(false);
+            }
+        });
+    })
 });

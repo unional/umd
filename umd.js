@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.2
+ * @version 0.3.3
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -132,7 +132,11 @@
             else {
                 // browser global.
                 factory(function(definition) {
-                    var result = definition(umdRequire, exports, module);
+                    // umd assigns window.module and window.exports to undefined,
+                    // which passed in by the module definition to this method.
+                    // Assign it locally to mimic their functionality.
+                    module = { exports: {} };
+                    var result = definition(umdRequire, module.exports, module);
 
                     if (browserGlobalIdentifier) {
                         var terms = browserGlobalIdentifier.split(/[.\/]/);
@@ -159,8 +163,8 @@
         root.umd = umd;
         // define require, exports, and module so that they won't cause
         // ReferenceError in the module for browser global scenario.
-        root.require = root.require || {};
-        root.module = root.module || { exports: {} };
-        root.exports = root.exports || root.module.exports;
+        root.require = root.require || undefined;
+        root.module = root.module || undefined;
+        root.exports = root.exports || undefined;
     }
 }(this));
