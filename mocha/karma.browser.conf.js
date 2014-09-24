@@ -27,6 +27,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/defineFunctionWithDep.js",
             "node_modules/sampleModules/umdv/defineFunctionWithDep.js",
             "node_modules/should/should.js",
+            "mocha/lib/when.js",
             "mocha/bg/*.js"
         ],
 

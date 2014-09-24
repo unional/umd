@@ -5,6 +5,7 @@
  */
 require('../../umd');
 var Should = require('should');
+var when = require('when');
 
 describe("require() umd modules", function() {
     it("should get returnObject", function() {
@@ -126,7 +127,78 @@ describe("umd.stubRequire()", function() {
                 done();
             });
     });
+
+    it("should not affect original require calls (before stub finishes)", function(done) {
+        var original = require('sampleModules/umd/returnObject');
+        original.should.eql({ value: "umd.returnObject value"});
+
+        umd.stubRequire(['sampleModules/umd/returnObject'], {
+            'sampleModules/umd/returnObject': { value: "fake" }
+        }, function(actual) {
+            actual.should.eql({ value: "fake" });
+
+            original = require('sampleModules/umd/returnObject');
+            original.should.eql({ value: "umd.returnObject value"});
+            done();
+        });
+    });
+
+    it("should not affect original require calls (after stub finishes)", function(done) {
+        var original = require('sampleModules/umd/returnObject');
+        original.should.eql({ value: "umd.returnObject value"});
+
+        var d = when.defer();
+        umd.stubRequire(['sampleModules/umd/returnObject'], {
+            'sampleModules/umd/returnObject': { value: "fake" }
+        }, function(actual) {
+            actual.should.eql({ value: "fake" });
+            d.resolve();
+        });
+
+        d.promise.done(function() {
+            original = require('sampleModules/umd/returnObject');
+            original.should.eql({ value: "umd.returnObject value"});
+            done();
+        });
+    });
+
+
+    it("should not affect original require calls  with dependencies (before stub finishes)", function(done) {
+        var original = require('sampleModules/umd/defineFunctionWithDep');
+        original.should.be.ok;
+
+        umd.stubRequire(['sampleModules/umd/defineFunctionWithDep'], {
+            'sampleModules/umd/defineFunction': function() { return "fake" }
+        }, function(actual) {
+            actual.should.be.ok;
+
+            actual().should.equal("fake Invoking umdv.defineFunction");
+            done();
+        });
+    });
+
+    it("should not affect original require calls  with dependencies (after stub finishes)", function(done) {
+        var original = require('sampleModules/umd/defineFunctionWithDep');
+        original.should.be.ok;
+
+        var d = when.defer();
+        umd.stubRequire(['sampleModules/umd/defineFunctionWithDep'], {
+            'sampleModules/umd/defineFunction': function() { return "fake" }
+        }, function(actual) {
+            actual.should.be.ok;
+
+            actual().should.equal("fake Invoking umdv.defineFunction");
+            d.resolve();
+        });
+
+        d.promise.done(function() {
+            original = require('sampleModules/umd/defineFunctionWithDep');
+            original().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction");
+            done();
+        });
+    });
 });
+
 
 describe("umd.ns()", function() {
     it("should return undefined if param is empty.", function() {

@@ -18,7 +18,9 @@ require.config({
     paths: {
         "sampleModules": "node_modules/sampleModules"
     },
-
+    packages: [
+        {name: "when", location: "node_modules/when", main: "when"}
+    ],
     // dynamically load all test files
     deps: allTestFiles,
 

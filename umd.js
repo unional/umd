@@ -81,25 +81,32 @@
      */
     function newContext(config) {
         var reloadTargets = [];
+        var modules = {};
 
         function createDefine(browserGlobalIdentifier) {
             return function browserGlobalDefine(definition) {
+                var module = {exports: {}};
+                var result;
+                if (typeof definition === "object") {
+                    result = definition;
+                }
+                else {
+                    result = definition(require, module.exports, module);
+                    result = (typeof result !== 'undefined') ? result : module.exports;
+                }
+
                 if (browserGlobalIdentifier) {
-                    var module = {exports: {}};
-                    var result;
-                    if (typeof definition === "object") {
-                        result = definition;
-                    }
-                    else {
-                        result = definition(require, module.exports, module);
-                        var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
-                        definitions[defId] = definition;
+                    var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
+                    definitions[defId] = definition;
+
+                    if (reloadTargets.indexOf(defId) === -1) {
+                        var terms = browserGlobalIdentifier.split(/[.\/]/);
+                        var id = terms.pop();
+                        var base = umd.ns(terms.join("."));
+                        base[id] = result;
                     }
 
-                    var terms = browserGlobalIdentifier.split(/[.\/]/);
-                    var id = terms.pop();
-                    var base = umd.ns(terms.join("."));
-                    base[id] = (typeof result !== 'undefined') ? result : module.exports;
+                    modules[defId] = result;
                 }
             };
         }
@@ -125,18 +132,19 @@
                 }
             }
 
+            var module;
             try {
                 if (Array.isArray(moduleName)) {
-                    var modules = moduleName.map(function(item) {
+                    var results = moduleName.map(function(item) {
                         return resolveModule(item);
                     });
 
-                    if (modules && callback) {
-                        callback.apply(this, modules);
+                    if (results && callback) {
+                        callback.apply(this, results);
                     }
                 }
                 else {
-                    var module = resolveModule(moduleName);
+                    module = resolveModule(moduleName);
 
                     if (module && callback) {
                         callback(module);
@@ -158,11 +166,21 @@
                     throw new Error("Module name cannot have '.' because it will not work in amd/node environment.");
                 }
                 var id = convertToBrowserGlobalIdentifier(moduleName);
+                var stubs = config.stubs || {};
+                if (stubs[id]) {
+                    return stubs[id];
+                }
+
                 if (reloadTargets.indexOf(id) !== -1) {
+
                     var definition = definitions[id];
                     if (definition) {
                         createDefine(id)(definition);
                     }
+                }
+
+                if (modules[id]) {
+                    return modules[id];
                 }
 
                 var parts = moduleName.split('!', 2);
@@ -177,8 +195,7 @@
                 var names = moduleName.split(/[.\/]/);
                 var name = names.shift();
 
-                var stubs = config.stubs || {};
-                var module = stubs[name] || root[name];
+                var module = root[name];
                 while (module && names.length) {
                     name = names.shift();
                     module = module[name];

@@ -16,6 +16,7 @@ module.exports = function(config) {
             'mocha/test-main.js',
             'umd.js',
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
+            {pattern: 'node_modules/when/**/*.js', included: false},
             {pattern: 'node_modules/should/should.js', included: false},
             {pattern: 'mocha/amd/*.js', included: false}
         ],
