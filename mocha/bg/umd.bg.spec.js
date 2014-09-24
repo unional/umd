@@ -150,11 +150,11 @@ describe("umd.namespace()", function() {
 });
 
 describe("umd", function() {
-    it("should allow environment still be determined as amd", function() {
-        if (typeof define === "function" && define.amd) {
-            (typeof require === "function" &&
-             typeof exports === "object" &&
-             typeof module === "object").should.be.false;
-        }
+    it("should allow environment still be determined as browser global", function() {
+        (typeof require === "function" &&
+         typeof exports === "object" &&
+         typeof module === "object").should.be.false;
+
+        (typeof define === "function" && define.amd).should.be.false;
     });
 });
