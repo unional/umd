@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.8
+ * @version 0.4.0
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -44,11 +44,9 @@
         else if (umd.isNodeJS()) {
             // Node (not CommonJS because module.exports does not conform)
             factory(function(definition) {
-                //noinspection JSUnresolvedVariable
                 var result = (typeof definition === "object") ? definition : definition(require, exports, module);
 
                 if (typeof result !== "undefined") {
-                    //noinspection JSUnresolvedVariable
                     module.exports = result;
                 }
             });
