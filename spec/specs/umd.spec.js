@@ -6,7 +6,7 @@
 define(function(require) {
     "use strict";
     require('umd');
-    describe("umd.require", function() {
+    describe("umd.require()", function() {
         "use strict";
         umd.test = {
             something: {someProp: "someValue"},
@@ -55,9 +55,6 @@ define(function(require) {
             });
         });
 
-        it("should config new context", function() {
-
-        });
     });
 
     describe("umd.stubRequire()", function() {
@@ -105,7 +102,7 @@ define(function(require) {
         });
     });
 
-    describe("umd.ns", function() {
+    describe("umd.ns()", function() {
         it("should return undefined if param is empty.", function() {
             var actual = umd.ns();
             expect(actual).toBeUndefined();
@@ -135,6 +132,43 @@ define(function(require) {
 
         it("should create multiple namespaces.", function() {
             var actual = umd.ns("TestA.B", "TestB.C", "TestC.D.E");
+            expect(TestA.B).toBeDefined();
+            expect(TestB.C).toBeDefined();
+            expect(TestC.D.E).toBeDefined();
+            expect(TestC.D.E === actual).toBeTruthy();
+        });
+    });
+
+    describe("umd.namespace()", function() {
+        it("should return undefined if param is empty.", function() {
+            var actual = umd.namespace();
+            expect(actual).toBeUndefined();
+        });
+
+        it("should create single level namespace.", function() {
+            var actual = umd.namespace("TestNamespace");
+            expect(TestNamespace).toBeDefined();
+            expect(TestNamespace).toEqual(actual);
+        });
+
+        it("should create nested namespace.", function() {
+            var actual = umd.namespace("TestNS.Blah.Doh");
+
+            expect(TestNS.Blah.Doh).toBeDefined();
+            expect(TestNS.Blah.Doh === actual).toBeTruthy();
+        });
+
+        it("should create nested namespace with / notation.", function() {
+            var actual = umd.namespace("TestN2/Ball/boo");
+
+            //noinspection JSUnresolvedVariable
+            expect(TestN2.Ball.boo).toBeDefined();
+            //noinspection JSUnresolvedVariable
+            expect(TestN2.Ball.boo === actual).toBeTruthy();
+        });
+
+        it("should create multiple namespaces.", function() {
+            var actual = umd.namespace("TestA.B", "TestB.C", "TestC.D.E");
             expect(TestA.B).toBeDefined();
             expect(TestB.C).toBeDefined();
             expect(TestC.D.E).toBeDefined();
