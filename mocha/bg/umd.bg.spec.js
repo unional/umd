@@ -63,25 +63,32 @@ describe("require() umd modules", function() {
     });
 });
 
-describe("umd.require() global references", function() {
-    it("should dereference with . notation", function() {
-        var actual = umd.require("umd.test");
-        umd.test.should.equal(actual);
+describe("umd.require() global reference", function() {
+    //noinspection JSUnresolvedVariable
+    window.umdTest = {
+        test: {
+            something: {someProp: "someValue"},
+            someFunc: function(value) {
+                return value || "defaultValue"
+            }
+        }
+    };
 
-        actual = umd.require("umd.test.someFunc");
-        umd.test.someFunc.should.equal(actual);
+    it("should not allow . notation", function() {
+        // "." notation does not work in amd and node.js environment.
+        umd.require.bind(this, "umdTest.test").should.throw();
     });
 
     it("should dereference with / notation", function() {
-        var actual = umd.require("umd/test/something");
-        actual.should.equal(umd.test.something);
+        var actual = umd.require("umdTest/test/something");
+        actual.should.equal(umdTest.test.something);
     });
 
     it("should return undefined if for invalid reference", function() {
         var actual = umd.require("SomethingNotExist");
         Should(actual).equal(undefined);
 
-        actual = umd.require("umd.test.NotExist");
+        actual = umd.require("umdTest/test/NotExist");
         Should(actual).equal(undefined);
     });
 
@@ -90,16 +97,16 @@ describe("umd.require() global references", function() {
     });
 
     it("should invoke the reference with ! syntax", function() {
-        var actual = umd.require("umd.test.someFunc!");
+        var actual = umd.require("umdTest/test/someFunc!");
         actual.should.equal("defaultValue");
 
-        actual = umd.require("umd.test.someFunc!MyValue");
+        actual = umd.require("umdTest/test/someFunc!MyValue");
         actual.should.equal("MyValue");
     });
 
     it("should invoke callback with the resolved module", function(done) {
-        umd.require("umd.test.something", function(actual) {
-            actual.should.equal(umd.test.something);
+        umd.require("umdTest/test/something", function(actual) {
+            actual.should.equal(umdTest.test.something);
             done();
         });
     });

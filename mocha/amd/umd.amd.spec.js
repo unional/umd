@@ -7,6 +7,7 @@ define(function(require) {
     "use strict";
     require('umd');
     var Should = require('../../node_modules/should/should');
+
     describe("require() umd modules", function() {
         it("should get returnObject", function() {
             var actual = require('sampleModules/umd/returnObject');
@@ -68,12 +69,9 @@ define(function(require) {
             }
         };
 
-        it("should dereference with . notation", function() {
-            var actual = umd.require("umdTest.test");
-            umdTest.test.should.equal(actual);
-
-            actual = umd.require("umdTest.test.someFunc");
-            umdTest.test.someFunc.should.equal(actual);
+        it("should not allow . notation", function() {
+            // "." notation does not work in amd and node.js environment.
+            umd.require.bind(this, "umdTest.test").should.throw();
         });
 
         it("should dereference with / notation", function() {
@@ -85,7 +83,7 @@ define(function(require) {
             var actual = umd.require("SomethingNotExist");
             Should(actual).equal(undefined);
 
-            actual = umd.require("umdTest.test.NotExist");
+            actual = umd.require("umdTest/test/NotExist");
             Should(actual).equal(undefined);
         });
 
@@ -94,15 +92,15 @@ define(function(require) {
         });
 
         it("should invoke the reference with ! syntax", function() {
-            var actual = umd.require("umdTest.test.someFunc!");
+            var actual = umd.require("umdTest/test/someFunc!");
             actual.should.equal("defaultValue");
 
-            actual = umd.require("umdTest.test.someFunc!MyValue");
+            actual = umd.require("umdTest/test/someFunc!MyValue");
             actual.should.equal("MyValue");
         });
 
         it("should invoke callback with the resolved module", function(done) {
-            umd.require("umdTest.test.something", function(actual) {
+            umd.require("umdTest/test/something", function(actual) {
                 actual.should.equal(umdTest.test.something);
                 done();
             });
@@ -129,6 +127,11 @@ define(function(require) {
                     prop.should.equal(umdTest.test.something.someProp);
                     done();
                 });
+        });
+
+        it("should not affect original require calls", function() {
+            var original = require('sampleModules/umd/returnObject');
+            original.should.eql({ value: "umd.returnObject value"});
         });
     });
 

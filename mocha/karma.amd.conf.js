@@ -14,7 +14,7 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files: [
             'mocha/test-main.js',
-            {pattern: '*.js', included: false},
+            'umd.js',
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
             {pattern: 'node_modules/should/should.js', included: false},
             {pattern: 'mocha/amd/*.js', included: false}

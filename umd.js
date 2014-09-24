@@ -109,33 +109,54 @@
          * This is use to support universal module definition (umd) for browser globals code.
          * @param {string|string[]} moduleName Name of the module.
          * @param {function} [callback] Function to call after resolving the module.
+         * @param {function} [errback] Error back function.
          * @returns {*} The target module if found; otherwise, undefined.
          */
-        var require = function require(moduleName, callback) {
+        var require = function require(moduleName, callback, errback) {
+            var error;
             if (!moduleName) {
-                throw new Error("moduleName can't be empty");
-            }
-
-            if (Array.isArray(moduleName)) {
-                var modules = moduleName.map(function(item) {
-                    return resolveModule(item);
-                });
-
-                if (modules && callback) {
-                    callback.apply(this, modules);
+                error = new Error("moduleName can't be empty");
+                if (errback) {
+                    errback(error);
+                    return;
+                }
+                else {
+                    throw error;
                 }
             }
-            else {
-                var module = resolveModule(moduleName);
 
-                if (module && callback) {
-                    callback(module);
+            try {
+                if (Array.isArray(moduleName)) {
+                    var modules = moduleName.map(function(item) {
+                        return resolveModule(item);
+                    });
+
+                    if (modules && callback) {
+                        callback.apply(this, modules);
+                    }
+                }
+                else {
+                    var module = resolveModule(moduleName);
+
+                    if (module && callback) {
+                        callback(module);
+                    }
+
+                    return module;
+                }
+            }
+            catch (error) {
+                if (errback) {
+                    errback(error);
                 }
 
-                return module;
+                throw error;
             }
 
             function resolveModule(moduleName) {
+                if (moduleName.indexOf(".") !== -1) {
+                    throw new Error("Module name cannot have '.' because it will not work in amd/node environment.");
+                }
                 var id = convertToBrowserGlobalIdentifier(moduleName);
                 if (reloadTargets.indexOf(id) !== -1) {
                     var definition = definitions[id];
@@ -170,6 +191,7 @@
                 return module;
             }
         };
+
         require.config = requireConfig;
 
         return {
@@ -284,8 +306,7 @@
 
             context.setReloadTargets(deps);
 
-            // Browser global does not need errback as everything are already loaded.
-            context.require(deps, callback);
+            context.require(deps, callback, errback);
         }
         else if (require.defined) {
             // require.js

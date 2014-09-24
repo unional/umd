@@ -67,12 +67,9 @@ describe("umd.require() global reference", function() {
         }
     };
 
-    it("should dereference with . notation", function() {
-        var actual = umd.require("umdTest.test");
-        umdTest.test.should.equal(actual);
-
-        actual = umd.require("umdTest.test.someFunc");
-        umdTest.test.someFunc.should.equal(actual);
+    it("should not allow . notation", function() {
+        // "." notation does not work in amd and node.js environment.
+        umd.require.bind(this, "umdTest.test").should.throw();
     });
 
     it("should dereference with / notation", function() {
@@ -84,7 +81,7 @@ describe("umd.require() global reference", function() {
         var actual = umd.require("SomethingNotExist");
         Should(actual).equal(undefined);
 
-        actual = umd.require("umdTest.test.NotExist");
+        actual = umd.require("umdTest/test/NotExist");
         Should(actual).equal(undefined);
     });
 
@@ -93,15 +90,15 @@ describe("umd.require() global reference", function() {
     });
 
     it("should invoke the reference with ! syntax", function() {
-        var actual = umd.require("umdTest.test.someFunc!");
+        var actual = umd.require("umdTest/test/someFunc!");
         actual.should.equal("defaultValue");
 
-        actual = umd.require("umdTest.test.someFunc!MyValue");
+        actual = umd.require("umdTest/test/someFunc!MyValue");
         actual.should.equal("MyValue");
     });
 
     it("should invoke callback with the resolved module", function(done) {
-        umd.require("umdTest.test.something", function(actual) {
+        umd.require("umdTest/test/something", function(actual) {
             actual.should.equal(umdTest.test.something);
             done();
         });
