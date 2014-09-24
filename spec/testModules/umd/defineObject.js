@@ -5,6 +5,6 @@
  */
 umd(function(define) {
     define({
-            value: "umd module value"
+            value: "umd.defineObject value"
         });
 }, "testModules.umd.defineObject", require, exports, module);

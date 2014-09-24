@@ -6,7 +6,7 @@
 umd(function(define) {
     define(function(require, exports, module) {
         return {
-            value: "umd module value"
+            value: "umd.returnObject value"
         };
     });
-}, "umdTest.umdModule", require, exports, module);
+}, "testModules.umd.returnObject", require, exports, module);

@@ -3,19 +3,19 @@
  * @license Licensed under the MIT License (https://github.com/unional/umd/LICENSE)).
  * Created by unional on 9/20/14.
  */
-var verboseModule = require('./umdVerboseModule');
+var verboseModule = require('./testModules/umdv/returnObject');
 console.log(verboseModule);
 
 require('../umd');
 var assert = require('assert');
 
-assert.equal(verboseModule.value, "umd verbose module value", "Fail to load umdVerboseModule");
+assert.equal(verboseModule.value, "umdv.returnObject value", "Fail to load testModules.umdv.returnObject");
 
-var umdTestModule = require('./umdModule');
+var umdTestModule = require('./testModules/umd/returnObject');
 
 console.log(umdTestModule);
 
-assert.deepEqual(umdTestModule, {value: "umd module value"}, "Fail to load umdTestModule");
+assert.deepEqual(umdTestModule, {value: "umd.returnObject value"}, "Fail to load testModules.umd.returnObject");
 
 var thing = {someProp: "thing's value"};
 

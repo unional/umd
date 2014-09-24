@@ -5,7 +5,7 @@
  */
 (function(define) {
     define({
-        value: "umd verbose module value"
+        value: "umdv.defineObject value"
     });
 }((function() {
     if (typeof define === 'function' && define.amd) {

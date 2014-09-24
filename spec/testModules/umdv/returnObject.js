@@ -6,7 +6,7 @@
 (function (define) {
     define(function(require, exports, module) {
         return {
-            value: "umd verbose module value"
+            value: "umdv.returnObject value"
         };
     });
 }((function() {
@@ -29,12 +29,7 @@
         }
         else {
             // Browser globals
-            return function(factory) {
-                //noinspection JSUnresolvedVariable
-                var result = factory(umd.require, exports, module);
-                //noinspection JSUnresolvedVariable
-                umd.ns("umdTest").umdVerboseModule = (typeof result !== 'undefined')? result : module.exports;
-            };
+            return umd.createDefine("testModules.umdv.returnObject");
         }
     }
 }())));
