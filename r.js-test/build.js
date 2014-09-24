@@ -7,8 +7,9 @@
 
 //noinspection BadExpressionStatementJS
 ({
-    name: "umdModule",
-    out: "umdModule.min.js",
+    appDir: "../sampleModules",
+    baseUrl: ".",
+    dir: "out",
     onBuildRead: function (moduleName, path, contents) {
         "use strict";
         var umdIndex = contents.indexOf("umd(");

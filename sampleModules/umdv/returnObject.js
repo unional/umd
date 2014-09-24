@@ -29,7 +29,7 @@
         }
         else {
             // Browser globals
-            return umd.createDefine("testModules.umdv.returnObject");
+            return umd.createDefine("sampleModules.umdv.returnObject");
         }
     }
 }())));

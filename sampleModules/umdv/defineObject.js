@@ -25,6 +25,6 @@
     }
     else {
         // Browser globals
-        return umd.createDefine("testModules.umdv.defineObject");
+        return umd.createDefine("sampleModules.umdv.defineObject");
     }
 }())));

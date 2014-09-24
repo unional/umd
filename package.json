@@ -1,10 +1,10 @@
 {
   "name": "write-umd",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Write Universal Module Definition modules with ease",
   "main": "umd.js",
   "scripts": {
-    "test": "karma start spec/karma.conf.js --single-run"
+    "test": "karma start mocha/karma.amd.conf.js --single-run"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,10 @@
   "bugs": {
     "url": "https://github.com/unional/umd/issues"
   },
-  "homepage": "https://github.com/unional/umd"
+  "homepage": "https://github.com/unional/umd",
+  "devDependencies": {
+    "mocha": "^1.21.4",
+    "requirejs": "^2.1.15",
+    "should": "^4.0.4"
+  }
 }

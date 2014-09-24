@@ -1,9 +1,7 @@
 // Karma configuration
-// Generated on Sat Sep 20 2014 23:55:57 GMT-0700 (PDT)
+// Generated on Wed Sep 24 2014 00:38:07 GMT-0700 (PDT)
 
-//noinspection JSUnresolvedVariable
 module.exports = function(config) {
-    //noinspection JSUnresolvedVariable
     config.set({
 
         // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -11,13 +9,14 @@ module.exports = function(config) {
 
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['jasmine', 'requirejs'],
+        frameworks: ['mocha', 'requirejs'],
 
         // list of files / patterns to load in the browser
         files: [
-            'spec/test-main.js',
-            {pattern: 'spec/specs/**/*.spec.js', included: false},
-            {pattern: "*.js", included: false}
+            'mocha/test-main.js',
+            {pattern: '*.js', included: false},
+            {pattern: 'node_modules/should/should.js', included: false},
+            {pattern: 'mocha/amd/*.js', included: false}
         ],
 
         // list of files to exclude
@@ -33,7 +32,7 @@ module.exports = function(config) {
         reporters: ['progress'],
 
         // web server port
-        port: 32841,
+        port: 9876,
 
         // enable / disable colors in the output (reporters and logs)
         colors: true,

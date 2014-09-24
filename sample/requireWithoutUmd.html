@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <script type="text/javascript" src="require-2.1.15/require.min.js"></script>
+        <script type="text/javascript">
+            require(['../sampleModules/umdv/defineObject'], function(testModule) {
+                alert(testModule.value);
+            });
+
+            require(['../sampleModules/umdv/returnObject'], function(testModule) {
+                alert(testModule.value);
+            });
+        </script>
+        <title></title>
+    </head>
+    <body>
+    </body>
+</html>

@@ -1,12 +1,19 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.7
+ * @version 0.3.8
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
 (function(root) {
     "use strict";
+
+    //noinspection JSUnresolvedVariable
+    if (typeof global !== "undefined") {
+        // node environment use global as root.
+        //noinspection JSUnresolvedVariable
+        root = global;
+    }
 
     /**
      * Universal module definition method. Use this method to simplify module definition.

@@ -9,4 +9,4 @@ umd(function(define) {
             value: "umd.returnObject value"
         };
     });
-}, "testModules.umd.returnObject", require, exports, module);
+}, "sampleModules.umd.returnObject", require, exports, module);
