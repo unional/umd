@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.3.6
+ * @version 0.3.7
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -24,9 +24,6 @@
      * For require.js, load this umd module before other modules
      * (at common/main.js where you write require.config({...}))
      * For r.js, you can use onBuildRead to trim out the umd code, just leaving the define call in-place.
-     *
-     * This is tested for browser global and require.js.
-     * It does not work for node.js yet because the module object in this scope is different than in the actual module
      * @param factory
      * @param {string|null} browserGlobalIdentifier Identifier for browser global. Pass in falsy value to omit browser global definition.
      * @param require Round trip require function (pre-defined)
@@ -50,22 +47,132 @@
         }
         else {
             // browser global.
-            factory(function(definition) {
-                // umd assigns window.module and window.exports to undefined,
-                // which passed in by the module definition to this method.
-                // Assign it locally to mimic their functionality.
-                module = {exports: {}};
-                var result = definition(umd.require, module.exports, module);
+            factory(umd.createDefine(browserGlobalIdentifier));
+        }
+    };
 
+    var contexts = {
+        "default": newContext({})
+    };
+
+    /**
+     * Definitions of modules referenced using umd.require().
+     * This is used to re-run the definition in order to stub the dependencies.
+     */
+    var definitions = {};
+
+    /**
+     * This counter is used to create unique contexts.
+     * @type {number}
+     */
+    var contextCount = 0;
+
+    /**
+     * Create new context.
+     * @param config
+     */
+    function newContext(config) {
+        var reloadTargets = [];
+
+        function createDefine(browserGlobalIdentifier) {
+            return function browserGlobalDefine(definition) {
                 if (browserGlobalIdentifier) {
+                    var module = {exports: {}};
+                    var result;
+                    if (typeof definition === "object") {
+                        result = definition;
+                    }
+                    else {
+                        result = definition(require, module.exports, module);
+                        var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
+                        definitions[defId] = definition;
+                    }
+
                     var terms = browserGlobalIdentifier.split(/[.\/]/);
                     var id = terms.pop();
                     var base = umd.ns(terms.join("."));
                     base[id] = (typeof result !== 'undefined') ? result : module.exports;
                 }
-            });
+            };
         }
-    };
+
+        /**
+         * A simple stub for requireJS and commonJS require function.
+         * This is use to support universal module definition (umd) for browser globals code.
+         * @param {string|string[]} moduleName Name of the module.
+         * @param {function} [callback] Function to call after resolving the module.
+         * @returns {*} The target module if found; otherwise, undefined.
+         */
+        var require = function require(moduleName, callback) {
+            if (!moduleName) {
+                throw new Error("moduleName can't be empty");
+            }
+
+            if (Array.isArray(moduleName)) {
+                var modules = moduleName.map(function(item) {
+                    return resolveModule(item);
+                });
+
+                if (modules && callback) {
+                    callback.apply(this, modules);
+                }
+            }
+            else {
+                var module = resolveModule(moduleName);
+
+                if (module && callback) {
+                    callback(module);
+                }
+
+                return module;
+            }
+
+            function resolveModule(moduleName) {
+                var id = convertToBrowserGlobalIdentifier(moduleName);
+                if (reloadTargets.indexOf(id) !== -1) {
+                    var definition = definitions[id];
+                    if (definition) {
+                        createDefine(id)(definition);
+                    }
+                }
+
+                var parts = moduleName.split('!', 2);
+                var arg = undefined;
+                if (parts.length == 2) {
+                    moduleName = parts[0];
+                    if (parts[1]) {
+                        arg = parts[1];
+                    }
+                }
+
+                var names = moduleName.split(/[.\/]/);
+                var name = names.shift();
+
+                var stubs = config.stubs || {};
+                var module = stubs[name] || root[name];
+                while (module && names.length) {
+                    name = names.shift();
+                    module = module[name];
+                }
+
+                if (parts.length == 2) {
+                    module = module(arg);
+                }
+
+                return module;
+            }
+        };
+        require.config = requireConfig;
+
+        return {
+            setReloadTargets: function(deps) {
+                reloadTargets = deps.map(function(dep) { return convertToBrowserGlobalIdentifier(dep); });
+            },
+            config: config,
+            require: require,
+            createDefine: createDefine
+        };
+    }
 
     /**
      * Creates namespaces to be used for scoping variables and classes so that they are not global.
@@ -95,8 +202,12 @@
 
     umd.ns = umd.namespace;
 
+    /**
+     * Determine whether the environment is require.js
+     * @returns {boolean}
+     */
     umd.isRequireJS = function isRequireJS() {
-        return typeof define === "function" && define.amd;
+        return typeof define === "function" && define.amd != undefined;
     };
     /**
      * Determine whether the environment is node.js
@@ -110,15 +221,17 @@
                typeof module === 'object';
     };
 
+    /**
+     * Determine whether the environment is browser global.
+     * @returns {boolean}
+     */
     umd.isBrowserGlobal = function isBrowserGlobal() {
         return !umd.isRequireJS() && !umd.isNodeJS();
     };
 
-    var contexts = {
-        "default": newContext({})
-    };
-
-    umd.require = contexts.default.require;
+    function convertToBrowserGlobalIdentifier(dep) {
+        return dep.replace(/\./g, '/');
+    }
 
     /**
      * Config require similar to requireJS.
@@ -127,7 +240,7 @@
      * @param {object} [option.map] Map shorthands.
      * @returns {*}
      */
-    umd.require.config = function(option) {
+    function requireConfig(option) {
         if (option.context) {
             return contexts[option.context] = contexts[option.context] || newContext(option);
         }
@@ -135,12 +248,10 @@
             contexts.default.updateOption(option);
             return contexts.default.require;
         }
-    };
-
-    var contextCount = 0;
+    }
 
     /**
-     * Requiring dependencies while injects specified stubs.
+     * Require dependencies while injects specified stubs.
      * @param {[]} deps Dependencies
      * @param {object} stubs Stubs `{ "moduleA": stubA }`
      * @param {function} callback The callback function.
@@ -153,7 +264,21 @@
         }
 
         var require = umd.globalRequire;
-        if (require.defined) {
+        if (typeof require === "undefined" || require === umd.require) {
+            // browser global
+            contextCount++;
+            var stubContext = 'stub' + contextCount;
+            var context = contexts[stubContext] = newContext({
+                stubs: stubs
+            });
+
+
+            context.setReloadTargets(deps);
+
+            // Browser global does not need errback as everything are already loaded.
+            context.require(deps, callback);
+        }
+        else if (require.defined) {
             // require.js
             contextCount++;
             var map = {};
@@ -190,101 +315,23 @@
 
             result(deps, callback, errback);
         }
-        else if (require === umd.require) {
-            // browser global
-            contextCount++;
-            var stubContext = 'stub' + contextCount;
-            var context = contexts[stubContext] = newContext({
-                stubs: stubs
-            });
-
-            // Browser global does not need errback as everything are already loaded.
-            context.require(deps, callback);
-        }
         else {
             // node
             throw new Error("stubRequire not implemented for node.js yet.");
         }
     };
 
-    if (typeof require === "function") {
-        // node
-        umd.globalRequire = require;
-    }
-    else {
-        umd.globalRequire = root.require;
-    }
-
+    // require === func -> node
     /**
-     * Create new context.
-     * @param option
-     * @returns {{updateOption: Function, require: Function}}
+     * Reference the global require function.
+     * Change this if you want to use a different require function (e.g. umd.require).
+     * This is typically used only for testing purpose.
+     * @type {require|*}
      */
-    function newContext(option) {
-        return {
-            updateOption: function updateOption(newOption) {
-                option = newOption;
-            },
-            /**
-             * A simple stub for requireJS and commonJS require function.
-             * This is use to support universal module definition (umd) for browser globals code.
-             * @param {string|string[]} moduleName Name of the module.
-             * @param {function} [callback] Function to call after resolving the module.
-             * @returns {*} The target module if found; otherwise, undefined.
-             */
-            require: function require(moduleName, callback) {
-                if (!moduleName) {
-                    throw new Error("moduleName can't be empty");
-                }
+    umd.globalRequire = (typeof require === "function") ? require : root.require;
 
-                if (Array.isArray(moduleName)) {
-                    var modules = moduleName.map(function(item) {
-                        return resolveModule(item);
-                    });
-
-                    if (modules && callback) {
-                        callback.apply(this, modules);
-                    }
-                }
-                else {
-                    var module = resolveModule(moduleName);
-
-                    if (module && callback) {
-                        callback(module);
-                    }
-
-                    return module;
-                }
-
-                function resolveModule(moduleName) {
-                    var parts = moduleName.split('!', 2);
-                    var arg = undefined;
-                    if (parts.length == 2) {
-                        moduleName = parts[0];
-                        if (parts[1]) {
-                            arg = parts[1];
-                        }
-                    }
-
-                    var names = moduleName.split(/[.\/]/);
-                    var name = names.shift();
-
-                    var stubs = option.stubs || {};
-                    var module = stubs[name] || root[name];
-                    while (module && names.length) {
-                        name = names.shift();
-                        module = module[name];
-                    }
-
-                    if (parts.length == 2) {
-                        module = module(arg);
-                    }
-
-                    return module;
-                }
-            }
-        };
-    }
+    umd.require = contexts.default.require;
+    umd.createDefine = contexts.default.createDefine;
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {
