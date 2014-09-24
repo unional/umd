@@ -13,12 +13,12 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'mocha/test-main.js',
+            'spec/test-main.js',
             'umd.js',
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
             {pattern: 'node_modules/when/**/*.js', included: false},
             {pattern: 'node_modules/should/should.js', included: false},
-            {pattern: 'mocha/amd/*.js', included: false}
+            {pattern: 'spec/amd/*.js', included: false}
         ],
 
         // list of files to exclude
@@ -26,7 +26,9 @@ module.exports = function(config) {
 
         // preprocess matching files before serving them to the browser
         // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-        preprocessors: {},
+        preprocessors: {
+            "umd.js": ['coverage']
+        },
 
         // test results reporter to use
         // possible values: 'dots', 'progress'

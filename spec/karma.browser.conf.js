@@ -27,8 +27,8 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/defineFunctionWithDep.js",
             "node_modules/sampleModules/umdv/defineFunctionWithDep.js",
             "node_modules/should/should.js",
-            "mocha/lib/when.js",
-            "mocha/bg/*.js"
+            "spec/lib/when.js",
+            "spec/bg/*.js"
         ],
 
         // list of files to exclude
@@ -36,7 +36,9 @@ module.exports = function(config) {
 
         // preprocess matching files before serving them to the browser
         // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-        preprocessors: {},
+        preprocessors: {
+            "umd.js": ['coverage']
+        },
 
         // test results reporter to use
         // possible values: 'dots', 'progress'
