@@ -45,7 +45,8 @@
             // Node (not CommonJS because module.exports does not conform)
             factory(function(definition) {
                 //noinspection JSUnresolvedVariable
-                var result = definition(require, exports, module);
+                var result = (typeof definition === "object") ? definition : definition(require, exports, module);
+
                 if (typeof result !== "undefined") {
                     //noinspection JSUnresolvedVariable
                     module.exports = result;
@@ -173,7 +174,9 @@
 
         return {
             setReloadTargets: function(deps) {
-                reloadTargets = deps.map(function(dep) { return convertToBrowserGlobalIdentifier(dep); });
+                reloadTargets = deps.map(function(dep) {
+                    return convertToBrowserGlobalIdentifier(dep);
+                });
             },
             config: config,
             require: require,
@@ -278,7 +281,6 @@
             var context = contexts[stubContext] = newContext({
                 stubs: stubs
             });
-
 
             context.setReloadTargets(deps);
 

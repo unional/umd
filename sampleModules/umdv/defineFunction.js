@@ -6,7 +6,7 @@
 (function (define) {
     define(function() {
         return function() {
-            return "Invoking sampleModules.umdv.defineFunction";
+            return "Invoking umdv.defineFunction";
         }
     });
 }((function() {

@@ -8,17 +8,17 @@ define(function(require) {
     require('umd');
     var Should = require('../../node_modules/should/should');
 
-    //noinspection JSUnresolvedVariable
-    window.umdTest = {
-        test: {
-            something: {someProp: "someValue"},
-            someFunc: function(value) {
-                return value || "defaultValue"
+    describe("umd.require() global reference", function() {
+        //noinspection JSUnresolvedVariable
+        window.umdTest = {
+            test: {
+                something: {someProp: "someValue"},
+                someFunc: function(value) {
+                    return value || "defaultValue"
+                }
             }
-        }
-    };
+        };
 
-    describe("umd.require()", function() {
         it("should dereference with . notation", function() {
             var actual = umd.require("umdTest.test");
             umdTest.test.should.equal(actual);

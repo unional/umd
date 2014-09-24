@@ -6,7 +6,7 @@
 umd(function(define) {
     define(function() {
         return function() {
-            return "Invoking sampleModules.umd.defineFunction";
+            return "Invoking umd.defineFunction";
         }
     });
 }, "sampleModules.umd.defineFunction", require, exports, module);

@@ -6,7 +6,7 @@
 (function (define) {
     define(function(require, exports, module) {
         module.exports = {
-            value: "umd.moduleExportsObject value"
+            value: "umdv.moduleExportsObject value"
         };
     });
 }((function() {

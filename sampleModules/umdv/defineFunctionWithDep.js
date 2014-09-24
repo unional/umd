@@ -9,8 +9,7 @@
         var func2 = require('sampleModules.umd.defineFunction');
 
         return function() {
-            return "Wrapping (sampleModule/umdv/defineFunction): " + func() + "\n"
-                   + "Wrapping (sampleModule.umd.defineFunction): " + func2();
+            return func() + " " + func2();
         }
     });
 }((function() {

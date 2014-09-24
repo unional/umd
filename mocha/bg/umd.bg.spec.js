@@ -11,7 +11,7 @@ umd.test = {
     }
 };
 
-describe("umd.require()", function() {
+describe("umd.require() global references", function() {
     it("should dereference with . notation", function() {
         var actual = umd.require("umd.test");
         umd.test.should.equal(actual);

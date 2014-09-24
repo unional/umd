@@ -17,7 +17,7 @@
              typeof module === 'object') {
         // Node (not CommonJS because module.exports does not conform)
         return function(factory) {
-            var result = factory(require, exports, module);
+            var result = (typeof factory === "object") ? factory : factory(require, exports, module);
             if (typeof result !== 'undefined') {
                 module.exports = result;
             }

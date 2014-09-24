@@ -5,7 +5,7 @@
  */
 (function (define) {
     define(function(require, exports /*, module */) {
-        exports.value = "umd.exportsObject value";
+        exports.value = "umdv.exportsObject value";
     });
 }((function() {
     if (typeof define === "function" && define.amd) {
