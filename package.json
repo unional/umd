@@ -4,7 +4,7 @@
   "description": "Write Universal Module Definition modules with ease",
   "main": "umd.js",
   "scripts": {
-    "test": "karma start mocha/karma.amd.conf.js --single-run"
+    "test": "karma start spec/karma.amd.conf.js --single-run"
   },
   "repository": {
     "type": "git",
