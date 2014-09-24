@@ -7,7 +7,7 @@
 
 //noinspection BadExpressionStatementJS
 ({
-    appDir: "../sampleModules",
+    appDir: "../node_modules/sampleModules",
     baseUrl: ".",
     dir: "out",
     onBuildRead: function (moduleName, path, contents) {

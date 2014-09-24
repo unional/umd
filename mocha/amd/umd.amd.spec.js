@@ -7,6 +7,55 @@ define(function(require) {
     "use strict";
     require('umd');
     var Should = require('../../node_modules/should/should');
+    describe("require() umd modules", function() {
+        it("should get returnObject", function() {
+            var actual = require('sampleModules/umd/returnObject');
+            actual.should.eql({ value: "umd.returnObject value"});
+
+            actual = require('sampleModules/umdv/returnObject');
+            actual.should.eql({ value: "umdv.returnObject value"});
+        });
+
+        it("should get defineObject", function() {
+            var actual = require('sampleModules/umd/defineObject');
+            actual.should.eql({ value: "umd.defineObject value"});
+
+            actual = require('sampleModules/umdv/defineObject');
+            actual.should.eql({ value: "umdv.defineObject value"});
+        });
+
+        it("should get exportsObject", function() {
+            var actual = require('sampleModules/umd/exportsObject');
+            actual.should.eql({ value: "umd.exportsObject value"});
+
+            actual = require('sampleModules/umdv/exportsObject');
+            actual.should.eql({ value: "umdv.exportsObject value"});
+        });
+
+        it("should get moduleExportsObject", function() {
+            var actual = require('sampleModules/umd/moduleExportsObject');
+            actual.should.eql({ value: "umd.moduleExportsObject value"});
+
+            actual = require('sampleModules/umdv/moduleExportsObject');
+            actual.should.eql({ value: "umdv.moduleExportsObject value"});
+        });
+
+        it("should get defineFunction", function() {
+            var actual = require('sampleModules/umd/defineFunction');
+            actual().should.equal("Invoking umd.defineFunction");
+
+            actual = require('sampleModules/umdv/defineFunction');
+            actual().should.equal("Invoking umdv.defineFunction");
+        });
+
+        it("should get defineFunctionWithDep", function() {
+            var actual = require('sampleModules/umd/defineFunctionWithDep');
+            actual().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction");
+
+            actual = require('sampleModules/umdv/defineFunctionWithDep');
+            actual().should.equal("Invoking umdv.defineFunction Invoking umd.defineFunction");
+        });
+    });
 
     describe("umd.require() global reference", function() {
         //noinspection JSUnresolvedVariable

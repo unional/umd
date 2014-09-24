@@ -2,15 +2,15 @@
 <html>
     <head lang="en">
         <meta charset="UTF-8">
-        <script type="text/javascript" src="../lib/require-2.1.15/require.min.js"></script>
+        <script type="text/javascript" src="require-2.1.15/require.min.js"></script>
         <script type="text/javascript">
             require(['../umd'], function() {
-                require(['../sampleModules/umd/returnObject'], function(testModule) {
+                require(['../node_modules/sampleModules/umd/returnObject'], function(testModule) {
                     alert(testModule.value);
                 });
             });
 
-            require(['../sampleModules/umdv/returnObject'], function(testModule) {
+            require(['../node_modules/sampleModules/umdv/returnObject'], function(testModule) {
                 alert(testModule.value);
             });
         </script>

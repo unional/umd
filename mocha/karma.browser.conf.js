@@ -14,6 +14,18 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files: [
             "umd.js",
+            "node_modules/sampleModules/umd/defineFunction.js",
+            "node_modules/sampleModules/umd/defineObject.js",
+            "node_modules/sampleModules/umd/exportsObject.js",
+            "node_modules/sampleModules/umd/moduleExportsObject.js",
+            "node_modules/sampleModules/umd/returnObject.js",
+            "node_modules/sampleModules/umdv/defineFunction.js",
+            "node_modules/sampleModules/umdv/defineObject.js",
+            "node_modules/sampleModules/umdv/exportsObject.js",
+            "node_modules/sampleModules/umdv/moduleExportsObject.js",
+            "node_modules/sampleModules/umdv/returnObject.js",
+            "node_modules/sampleModules/umd/defineFunctionWithDep.js",
+            "node_modules/sampleModules/umdv/defineFunctionWithDep.js",
             "node_modules/should/should.js",
             "mocha/bg/*.js"
         ],
