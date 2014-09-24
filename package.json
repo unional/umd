@@ -20,9 +20,9 @@
   },
   "homepage": "https://github.com/unional/umd",
   "devDependencies": {
+    "chai": "^1.9.1",
     "mocha": "^1.21.4",
     "requirejs": "^2.1.15",
-    "should": "^4.0.4",
     "when": "^3.4.6"
   }
 }

@@ -4,8 +4,10 @@
  * Created by hwong on 9/20/14.
  */
 require('../../umd');
-var Should = require('should');
 var when = require('when');
+var chai = require('chai');
+chai.should();
+var expect = chai.expect;
 
 describe("require() umd modules", function() {
     it("should get returnObject", function() {
@@ -80,10 +82,10 @@ describe("umd.require() global reference", function() {
 
     it("should return undefined if for invalid reference", function() {
         var actual = umd.require("SomethingNotExist");
-        Should(actual).equal(undefined);
+        expect(actual).to.be.undefined;
 
         actual = umd.require("umdTest/test/NotExist");
-        Should(actual).equal(undefined);
+        expect(actual).to.be.undefined;
     });
 
     it("should throw error if param is empty", function() {
@@ -113,7 +115,7 @@ describe("umd.stubRequire()", function() {
 
     it("should stub according to stub input", function(done) {
         var actual = umd.require("theThing");
-        Should(actual).equal(undefined);
+        expect(actual).to.be.undefined;
 
         umd.stubRequire(
             ['theThing', 'theProp'],
@@ -199,47 +201,46 @@ describe("umd.stubRequire()", function() {
     });
 });
 
-
 describe("umd.ns()", function() {
     it("should return undefined if param is empty.", function() {
         var actual = umd.ns();
-        Should(actual).equal(undefined);
+        expect(actual).to.be.undefined;
     });
 
     it("should create single level namespace.", function() {
         var actual = umd.ns("TestNamespace");
-        Should(actual).not.equal(undefined);
+        expect(actual).to.exist;
         actual.should.equal(TestNamespace);
     });
 
     it("should create nested namespace.", function() {
         var actual = umd.ns("TestNS.Blah.Doh");
-        Should(TestNS.Blah.Doh).not.equal(undefined);
+        expect(TestNS.Blah.Doh).to.exist
         actual.should.equal(TestNS.Blah.Doh);
     });
 
     it("should create nested namespace with / notation.", function() {
         var actual = umd.ns("TestN2/Ball/boo");
         //noinspection JSUnresolvedVariable
-        Should(TestN2.Ball.boo).not.equal(undefined);
+        expect(TestN2.Ball.boo).to.exist;
 
         //noinspection JSUnresolvedVariable
-        Should(actual).equal(TestN2.Ball.boo);
+        expect(actual).equal(TestN2.Ball.boo);
     });
 
     it("should create multiple namespaces.", function() {
         var actual = umd.ns("TestA.B", "TestB.C", "TestC.D.E");
-        Should(TestA.B).not.equal(undefined);
-        Should(TestB.C).not.equal(undefined);
-        Should(TestC.D.E).not.equal(undefined);
-        Should(actual).equal(TestC.D.E);
+        expect(TestA.B).to.exist;
+        expect(TestB.C).to.exist;
+        expect(TestC.D.E).to.exist;
+        expect(actual).equal(TestC.D.E);
     });
 });
 
 describe("umd.namespace()", function() {
     it("should return undefined if param is empty.", function() {
         var actual = umd.namespace();
-        Should(actual).equal(undefined);
+        expect(actual).to.be.undefined;
     });
 
     it("should create single level namespace.", function() {

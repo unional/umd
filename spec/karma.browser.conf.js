@@ -26,7 +26,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umdv/returnObject.js",
             "node_modules/sampleModules/umd/defineFunctionWithDep.js",
             "node_modules/sampleModules/umdv/defineFunctionWithDep.js",
-            "node_modules/should/should.js",
+            "node_modules/chai/chai.js",
             "spec/lib/when.js",
             "spec/bg/*.js"
         ],
@@ -46,7 +46,7 @@ module.exports = function(config) {
         reporters: ['progress'],
 
         // web server port
-        port: 9875,
+        port: 4984,
 
         // enable / disable colors in the output (reporters and logs)
         colors: true,

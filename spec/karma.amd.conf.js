@@ -17,7 +17,8 @@ module.exports = function(config) {
             'umd.js',
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
             {pattern: 'node_modules/when/**/*.js', included: false},
-            {pattern: 'node_modules/should/should.js', included: false},
+            //{pattern: 'node_modules/should/should.js', included: false},
+            {pattern: 'node_modules/chai/chai.js', included: false},
             {pattern: 'spec/amd/*.js', included: false}
         ],
 
