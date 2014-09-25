@@ -1,18 +1,46 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.4.2
+ * @version 0.4.3
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
 (function(root) {
     "use strict";
 
+    var contexts = {};
+
     /**
-     *
-     * @type {{nodeJS: {}, requireJS: {}, browser: {}}}
+     * This counter is used to create unique contexts.
+     * @type {number}
      */
-    var x = {nodeJS: {}, requireJS: {}, browser: {}};
+    var contextCount = 0;
+
+    /**
+     * Global definitions of modules referenced using umd.require().
+     * This is used to re-run the definition in order to stub the dependencies.
+     */
+    var definitions = {};
+
+    // region # getParamNames helper function
+    var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+    var ARGUMENT_NAMES = /([^\s,]+)/g;
+
+    /**
+     * Gets parameter names of the specified function
+     * @param func
+     * @returns {string[]}
+     */
+    function getParamNames(func) {
+        var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+        var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+        if (result === null) {
+            result = [];
+        }
+        return result
+    }
+
+    // endregion
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== "undefined") {
@@ -63,18 +91,259 @@
         }
     }
 
-    var getParamNames = (function() {
-        var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
-        var ARGUMENT_NAMES = /([^\s,]+)/g;
-        return function getParamNames(func) {
-            var fnStr = func.toString().replace(STRIP_COMMENTS, '');
-            var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
-            if (result === null) {
-                result = [];
+    function convertToBrowserGlobalIdentifier(dep) {
+        return dep.replace(/\./g, '/');
+    }
+
+    /**
+     * Require dependencies while injects specified stubs.
+     * @param {[]} deps Dependencies
+     * @param {object} stubs Stubs `{ "moduleA": stubA }`
+     * @param {function} callback The callback function.
+     * @param {function} [errback] The error back function.
+     * @returns {Function|*}
+     */
+    function stubRequire(deps, stubs, callback, errback) {
+        if (!Array.isArray(deps)) {
+            throw new Error("Dependencies must be an array.");
+        }
+
+        var require = umd.globalRequire;
+        if (typeof require === "undefined" || require === umd.require) {
+            // browser global
+            contextCount++;
+            var stubContext = 'stub' + contextCount;
+            var context = contexts[stubContext] = new Context({
+                stubs: stubs
+            });
+
+            context.setReloadTargets(deps);
+
+            context.require(deps, callback, errback);
+        }
+        else if (require.defined) {
+            // require.js
+            contextCount++;
+            var map = {};
+
+            for (var key in stubs) {
+                if (stubs.hasOwnProperty(key)) {
+                    var stubName = 'stub' + key + contextCount;
+                    map[key] = stubName;
+                    (function(key) {
+                        var value = stubs[key];
+                        define(stubName, [], function() {
+                            return value;
+                        });
+                    }(key))
+                }
             }
-            return result
+
+            var contextName = "context_" + contextCount;
+            var result = require.config({
+                context: contextName,
+                map: {
+                    "*": map
+                },
+                baseUrl: require.s.contexts._.config.baseUrl,
+                paths: require.s.contexts._.config.paths
+            });
+
+            var parentDefined = require.s.contexts._.defined;
+            for (var m in parentDefined) {
+                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
+                    require.s.contexts[contextName].defined[m] = parentDefined[m];
+                }
+            }
+
+            result(deps, callback, errback);
+        }
+        else {
+            // node
+            throw new Error("stubRequire not implemented for node.js yet.");
+        }
+    }
+
+    function Context(config) {
+        this.reloadTargets = [];
+        this.modules = {};
+        this.config = config;
+
+        var self = this;
+        /**
+         * A simple stub for requireJS and commonJS require function.
+         * This is use to support universal module definition (umd) for browser globals code.
+         * @param {string|string[]} moduleName Name of the module.
+         * @param {function} [callback] Function to call after resolving the module.
+         * @param {function} [errback] Error back function.
+         * @returns {*} The target module if found; otherwise, undefined.
+         */
+        this.require = function require(moduleName, callback, errback) {
+            var error;
+            if (!moduleName) {
+                error = new Error("moduleName can't be empty");
+                if (errback) {
+                    errback(error);
+                    return;
+                }
+                else {
+                    throw error;
+                }
+            }
+
+            var module;
+            try {
+                if (Array.isArray(moduleName)) {
+                    var results = moduleName.map(function(item) {
+                        return self.resolveModule(item);
+                    });
+
+                    if (results && callback) {
+                        callback.apply(this, results);
+                    }
+                }
+                else {
+                    module = self.resolveModule(moduleName);
+
+                    if (module && callback) {
+                        callback(module);
+                    }
+
+                    return module;
+                }
+            }
+            catch (error) {
+                if (errback) {
+                    errback(error);
+                }
+
+                throw error;
+            }
         };
-    }());
+        /**
+         * Config require similar to requireJS.
+         * @param {object} option Config option.
+         * @param {string} [option.context] Context name. If not specified, it modifies the default context.
+         * @param {object} [option.mapping] Module name mapping. "func": "sampleModules/umd/defineFunction"
+         * @param {object} [option.paths] Mapping for the FIRST component of the module name. ".": "sampleModules/umd"
+         * @returns {*}
+         */
+        this.require.config = function requireConfig(option) {
+            var context = contexts.default;
+            if (option.context) {
+                context = contexts[option.context];
+                if (!context) {
+                    context = contexts[option.context] = newContext(option);
+                }
+                else {
+                    context.updateConfig(option);
+                }
+            }
+            else {
+                context.updateConfig(option);
+            }
+
+            return context.require;
+        };
+        this.createDefine = function createDefine(browserGlobalIdentifier, mapping) {
+            return function browserGlobalDefine(definition) {
+                var module = {exports: {}};
+                var result;
+                if (typeof definition === "object") {
+                    result = definition;
+                }
+                else {
+                    var localRequire = (mapping) ? wrapRequire(self.require, mapping) : self.require;
+                    result = definition(localRequire, module.exports, module);
+                    result = (typeof result !== 'undefined') ? result : module.exports;
+                }
+
+                if (browserGlobalIdentifier) {
+                    var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
+                    definitions[defId] = definition;
+
+                    if (self.reloadTargets.indexOf(defId) === -1) {
+                        var terms = browserGlobalIdentifier.split(/[.\/]/);
+                        var id = terms.pop();
+                        var base = umd.ns(terms.join("."));
+                        base[id] = result;
+                    }
+
+                    self.modules[defId] = result;
+                }
+            };
+        };
+    }
+
+    Context.prototype.updateConfig = function updateConfig(config) {
+        this.config = config;
+    };
+
+    Context.prototype.setReloadTargets = function setReloadTargets(deps) {
+        this.reloadTargets = deps.map(function(dep) {
+            return convertToBrowserGlobalIdentifier(dep);
+        });
+    };
+
+    Context.prototype.resolveModule = function resolveModule(moduleName) {
+        var id = convertToBrowserGlobalIdentifier(moduleName);
+        var stubs = this.config.stubs || {};
+        var mapping = this.config.mapping || {};
+        var paths = this.config.paths || {};
+
+        if (stubs[id]) {
+            return stubs[id];
+        }
+
+        if (this.reloadTargets.indexOf(id) !== -1) {
+
+            var definition = definitions[id];
+            if (definition) {
+                this.createDefine(id)(definition);
+            }
+        }
+
+        if (this.modules[id]) {
+            return this.modules[id];
+        }
+
+        moduleName = mapping[moduleName] || moduleName;
+
+        var parts = moduleName.split('!', 2);
+        var arg = undefined;
+        if (parts.length == 2) {
+            moduleName = parts[0];
+            if (parts[1]) {
+                arg = parts[1];
+            }
+        }
+
+        var names = moduleName.split("/");
+        var name = names.shift();
+
+        if (paths[name]) {
+            var subNames = paths[name].split("/");
+            names = subNames.concat(names);
+            name = names.shift();
+        }
+
+
+        var module = root[name];
+        while (module && names.length) {
+            name = names.shift();
+            module = module[name];
+        }
+
+        if (parts.length == 2) {
+            module = module(arg);
+        }
+
+        return module;
+    };
+
+    contexts.default = new Context({mapping: {}, paths: {}});
+
+    // ********** PUBLIC API ************
 
     /**
      * Universal module definition method. Use this method to simplify module definition.
@@ -129,361 +398,6 @@
         }
     };
 
-    var contexts = {};
-
-    /**
-     * Definitions of modules referenced using umd.require().
-     * This is used to re-run the definition in order to stub the dependencies.
-     */
-    var definitions = {};
-
-    /**
-     * This counter is used to create unique contexts.
-     * @type {number}
-     */
-    var contextCount = 0;
-
-    function Context(config) {
-        this.reloadTargets = [];
-        this.modules = {};
-        this.config = { mapping: {}, paths: {}};
-
-        /**
-         * A simple stub for requireJS and commonJS require function.
-         * This is use to support universal module definition (umd) for browser globals code.
-         * @param {string|string[]} moduleName Name of the module.
-         * @param {function} [callback] Function to call after resolving the module.
-         * @param {function} [errback] Error back function.
-         * @returns {*} The target module if found; otherwise, undefined.
-         */
-        this.require = function require(moduleName, callback, errback) {
-            var self = this;
-            var error;
-            if (!moduleName) {
-                error = new Error("moduleName can't be empty");
-                if (errback) {
-                    errback(error);
-                    return;
-                }
-                else {
-                    throw error;
-                }
-            }
-
-            var module;
-            try {
-                if (Array.isArray(moduleName)) {
-                    var results = moduleName.map(function(item) {
-                        return resolveModule(item);
-                    });
-
-                    if (results && callback) {
-                        callback.apply(this, results);
-                    }
-                }
-                else {
-                    module = resolveModule(moduleName);
-
-                    if (module && callback) {
-                        callback(module);
-                    }
-
-                    return module;
-                }
-            }
-            catch (error) {
-                if (errback) {
-                    errback(error);
-                }
-
-                throw error;
-            }
-
-            function resolveModule(moduleName) {
-                var id = convertToBrowserGlobalIdentifier(moduleName);
-                var stubs = config.stubs || {};
-                if (stubs[id]) {
-                    return stubs[id];
-                }
-
-                if (self.reloadTargets.indexOf(id) !== -1) {
-
-                    var definition = definitions[id];
-                    if (definition) {
-                        this.createDefine(id)(definition);
-                    }
-                }
-
-                if (self.modules[id]) {
-                    return self.modules[id];
-                }
-
-                var parts = moduleName.split('!', 2);
-                var arg = undefined;
-                if (parts.length == 2) {
-                    moduleName = parts[0];
-                    if (parts[1]) {
-                        arg = parts[1];
-                    }
-                }
-
-                var names = moduleName.split(/[.\/]/);
-                var name = names.shift();
-
-                var module = root[name];
-                while (module && names.length) {
-                    name = names.shift();
-                    module = module[name];
-                }
-
-                if (parts.length == 2) {
-                    module = module(arg);
-                }
-
-                return module;
-            }
-        };
-        /**
-         * Config require similar to requireJS.
-         * @param {object} option Config option.
-         * @param {string} [option.context] Context name. If not specified, it modifies the default context.
-         * @param {object} [option.map] Map shorthands.
-         * @returns {*}
-         */
-        this.require.config = function requireConfig(option) {
-            var context = contexts.default;
-            if (option.context) {
-                context = contexts[option.context];
-                if (!context) {
-                    context = contexts[option.context] = newContext(option);
-                }
-                else {
-                    context.updateConfig(option);
-                }
-            }
-            else {
-                context.updateConfig(option);
-            }
-
-            return context.require;
-        };
-    }
-
-    Context.prototype.createDefine = function createDefine(browserGlobalIdentifier, mapping) {
-        var self = this;
-        return function browserGlobalDefine(definition) {
-            var module = {exports: {}};
-            var result;
-            if (typeof definition === "object") {
-                result = definition;
-            }
-            else {
-                var localRequire = (mapping) ? wrapRequire(this.require, mapping) : this.require;
-                result = definition(localRequire, module.exports, module);
-                result = (typeof result !== 'undefined') ? result : module.exports;
-            }
-
-            if (browserGlobalIdentifier) {
-                var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
-                definitions[defId] = definition;
-
-                if (self.reloadTargets.indexOf(defId) === -1) {
-                    var terms = browserGlobalIdentifier.split(/[.\/]/);
-                    var id = terms.pop();
-                    var base = umd.ns(terms.join("."));
-                    base[id] = result;
-                }
-
-                self.modules[defId] = result;
-            }
-        };
-    };
-
-    Context.prototype.updateConfig = function updateConfig(config) {
-        this.config = config;
-    };
-
-    Context.prototype.setReloadTargets = function setReloadTargets(deps) {
-        this.reloadTargets = deps.map(function(dep) {
-            return convertToBrowserGlobalIdentifier(dep);
-        });
-    };
-
-    /**
-     * Create new context.
-     * @param config
-     */
-    function newContext(config) {
-        var reloadTargets = [];
-        var modules = {};
-
-        function createDefine(browserGlobalIdentifier, mapping) {
-            return function browserGlobalDefine(definition) {
-                var module = {exports: {}};
-                var result;
-                if (typeof definition === "object") {
-                    result = definition;
-                }
-                else {
-                    if (mapping) {
-                        require = wrapRequire(require, mapping);
-                    }
-                    result = definition(require, module.exports, module);
-                    result = (typeof result !== 'undefined') ? result : module.exports;
-                }
-
-                if (browserGlobalIdentifier) {
-                    var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
-                    definitions[defId] = definition;
-
-                    if (reloadTargets.indexOf(defId) === -1) {
-                        var terms = browserGlobalIdentifier.split(/[.\/]/);
-                        var id = terms.pop();
-                        var base = umd.ns(terms.join("."));
-                        base[id] = result;
-                    }
-
-                    modules[defId] = result;
-                }
-            };
-        }
-
-        /**
-         * A simple stub for requireJS and commonJS require function.
-         * This is use to support universal module definition (umd) for browser globals code.
-         * @param {string|string[]} moduleName Name of the module.
-         * @param {function} [callback] Function to call after resolving the module.
-         * @param {function} [errback] Error back function.
-         * @returns {*} The target module if found; otherwise, undefined.
-         */
-        var require = function require(moduleName, callback, errback) {
-            var error;
-            if (!moduleName) {
-                error = new Error("moduleName can't be empty");
-                if (errback) {
-                    errback(error);
-                    return;
-                }
-                else {
-                    throw error;
-                }
-            }
-
-            var module;
-            try {
-                if (Array.isArray(moduleName)) {
-                    var results = moduleName.map(function(item) {
-                        return resolveModule(item);
-                    });
-
-                    if (results && callback) {
-                        callback.apply(this, results);
-                    }
-                }
-                else {
-                    module = resolveModule(moduleName);
-
-                    if (module && callback) {
-                        callback(module);
-                    }
-
-                    return module;
-                }
-            }
-            catch (error) {
-                if (errback) {
-                    errback(error);
-                }
-
-                throw error;
-            }
-
-            function resolveModule(moduleName) {
-                var id = convertToBrowserGlobalIdentifier(moduleName);
-                var stubs = config.stubs || {};
-                if (stubs[id]) {
-                    return stubs[id];
-                }
-
-                if (reloadTargets.indexOf(id) !== -1) {
-
-                    var definition = definitions[id];
-                    if (definition) {
-                        createDefine(id)(definition);
-                    }
-                }
-
-                if (modules[id]) {
-                    return modules[id];
-                }
-
-                var parts = moduleName.split('!', 2);
-                var arg = undefined;
-                if (parts.length == 2) {
-                    moduleName = parts[0];
-                    if (parts[1]) {
-                        arg = parts[1];
-                    }
-                }
-
-                var names = moduleName.split(/[.\/]/);
-                var name = names.shift();
-
-                var module = root[name];
-                while (module && names.length) {
-                    name = names.shift();
-                    module = module[name];
-                }
-
-                if (parts.length == 2) {
-                    module = module(arg);
-                }
-
-                return module;
-            }
-        };
-
-        /**
-         * Config require similar to requireJS.
-         * @param {object} option Config option.
-         * @param {string} [option.context] Context name. If not specified, it modifies the default context.
-         * @param {object} [option.map] Map shorthands.
-         * @returns {*}
-         */
-        function requireConfig(option) {
-            var context = contexts.default;
-            if (option.context) {
-                context = contexts[option.context];
-                if (!context) {
-                    context = contexts[option.context] = newContext(option);
-                }
-                else {
-                    context.updateOption(option);
-                }
-            }
-            else {
-                context.updateOption(option);
-            }
-
-            return context.require;
-        }
-
-        require.config = requireConfig;
-
-        var context = {
-            setReloadTargets: function(deps) {
-                reloadTargets = deps.map(function(dep) {
-                    return convertToBrowserGlobalIdentifier(dep);
-                });
-            },
-            updateConfig: updateConfig,
-            require: require,
-            createDefine: createDefine
-        };
-
-        return context;
-    }
-
     /**
      * Creates namespaces to be used for scoping variables and classes so that they are not global.
      * Specifying the last node of a namespace implicitly creates all other nodes.
@@ -509,7 +423,6 @@
 
         return result;
     };
-
     umd.ns = umd.namespace;
 
     /**
@@ -539,80 +452,8 @@
         return !umd.isRequireJS() && !umd.isNodeJS();
     };
 
-    function convertToBrowserGlobalIdentifier(dep) {
-        return dep.replace(/\./g, '/');
-    }
-
-    /**
-     * Require dependencies while injects specified stubs.
-     * @param {[]} deps Dependencies
-     * @param {object} stubs Stubs `{ "moduleA": stubA }`
-     * @param {function} callback The callback function.
-     * @param {function} [errback] The error back function.
-     * @returns {Function|*}
-     */
-    umd.stubRequire = function(deps, stubs, callback, errback) {
-        if (!Array.isArray(deps)) {
-            throw new Error("Dependencies must be an array.");
-        }
-
-        var require = umd.globalRequire;
-        if (typeof require === "undefined" || require === umd.require) {
-            // browser global
-            contextCount++;
-            var stubContext = 'stub' + contextCount;
-            var context = contexts[stubContext] = newContext({
-                stubs: stubs
-            });
-
-            context.setReloadTargets(deps);
-
-            context.require(deps, callback, errback);
-        }
-        else if (require.defined) {
-            // require.js
-            contextCount++;
-            var map = {};
-
-            for (var key in stubs) {
-                if (stubs.hasOwnProperty(key)) {
-                    var stubName = 'stub' + key + contextCount;
-                    map[key] = stubName;
-                    (function(key) {
-                        var value = stubs[key];
-                        define(stubName, [], function() {
-                            return value;
-                        });
-                    }(key))
-                }
-            }
-
-            var contextName = "context_" + contextCount;
-            var result = require.config({
-                context: contextName,
-                map: {
-                    "*": map
-                },
-                baseUrl: require.s.contexts._.config.baseUrl,
-                paths: require.s.contexts._.config.paths
-            });
-
-            var parentDefined = require.s.contexts._.defined;
-            for (var m in parentDefined) {
-                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
-                    require.s.contexts[contextName].defined[m] = parentDefined[m];
-                }
-            }
-
-            result(deps, callback, errback);
-        }
-        else {
-            // node
-            throw new Error("stubRequire not implemented for node.js yet.");
-        }
-    };
-
-    // require === func -> node
+    umd.stubRequire = stubRequire;
+    // require === func meaning it is node environment
     /**
      * Reference the global require function.
      * Change this if you want to use a different require function (e.g. umd.require).
