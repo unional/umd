@@ -9,37 +9,47 @@ var chai = require('chai');
 chai.should();
 var expect = chai.expect;
 
+//noinspection JSUnresolvedVariable
+global.umdTest = {
+    test: {
+        something: {someProp: "someValue"},
+        someFunc: function(value) {
+            return value || "defaultValue"
+        }
+    }
+};
+
 describe("require() umd modules", function() {
     it("should get returnObject", function() {
         var actual = require('sampleModules/umd/returnObject');
-        actual.should.eql({ value: "umd.returnObject value"});
+        actual.should.eql({value: "umd.returnObject value"});
 
         actual = require('sampleModules/umdv/returnObject');
-        actual.should.eql({ value: "umdv.returnObject value"});
+        actual.should.eql({value: "umdv.returnObject value"});
     });
 
     it("should get defineObject", function() {
         var actual = require('sampleModules/umd/defineObject');
-        actual.should.eql({ value: "umd.defineObject value"});
+        actual.should.eql({value: "umd.defineObject value"});
 
         actual = require('sampleModules/umdv/defineObject');
-        actual.should.eql({ value: "umdv.defineObject value"});
+        actual.should.eql({value: "umdv.defineObject value"});
     });
 
     it("should get exportsObject", function() {
         var actual = require('sampleModules/umd/exportsObject');
-        actual.should.eql({ value: "umd.exportsObject value"});
+        actual.should.eql({value: "umd.exportsObject value"});
 
         actual = require('sampleModules/umdv/exportsObject');
-        actual.should.eql({ value: "umdv.exportsObject value"});
+        actual.should.eql({value: "umdv.exportsObject value"});
     });
 
     it("should get moduleExportsObject", function() {
         var actual = require('sampleModules/umd/moduleExportsObject');
-        actual.should.eql({ value: "umd.moduleExportsObject value"});
+        actual.should.eql({value: "umd.moduleExportsObject value"});
 
         actual = require('sampleModules/umdv/moduleExportsObject');
-        actual.should.eql({ value: "umdv.moduleExportsObject value"});
+        actual.should.eql({value: "umdv.moduleExportsObject value"});
     });
 
     it("should get defineFunction", function() {
@@ -60,15 +70,6 @@ describe("require() umd modules", function() {
 });
 
 describe("umd.require() global reference", function() {
-    //noinspection JSUnresolvedVariable
-    global.umdTest = {
-        test: {
-            something: {someProp: "someValue"},
-            someFunc: function(value) {
-                return value || "defaultValue"
-            }
-        }
-    };
 
     it("should dereference with / notation", function() {
         var actual = umd.require("umdTest/test/something");
@@ -139,45 +140,46 @@ describe("umd.stubRequire()", function() {
 
     it("should not affect original require calls (before stub finishes)", function(done) {
         var original = require('sampleModules/umd/returnObject');
-        original.should.eql({ value: "umd.returnObject value"});
+        original.should.eql({value: "umd.returnObject value"});
 
         umd.stubRequire(['sampleModules/umd/returnObject'], {
-            'sampleModules/umd/returnObject': { value: "fake" }
+            'sampleModules/umd/returnObject': {value: "fake"}
         }, function(actual) {
-            actual.should.eql({ value: "fake" });
+            actual.should.eql({value: "fake"});
 
             original = require('sampleModules/umd/returnObject');
-            original.should.eql({ value: "umd.returnObject value"});
+            original.should.eql({value: "umd.returnObject value"});
             done();
         });
     });
 
     it("should not affect original require calls (after stub finishes)", function(done) {
         var original = require('sampleModules/umd/returnObject');
-        original.should.eql({ value: "umd.returnObject value"});
+        original.should.eql({value: "umd.returnObject value"});
 
         var d = when.defer();
         umd.stubRequire(['sampleModules/umd/returnObject'], {
-            'sampleModules/umd/returnObject': { value: "fake" }
+            'sampleModules/umd/returnObject': {value: "fake"}
         }, function(actual) {
-            actual.should.eql({ value: "fake" });
+            actual.should.eql({value: "fake"});
             d.resolve();
         });
 
         d.promise.done(function() {
             original = require('sampleModules/umd/returnObject');
-            original.should.eql({ value: "umd.returnObject value"});
+            original.should.eql({value: "umd.returnObject value"});
             done();
         });
     });
-
 
     it("should not affect original require calls  with dependencies (before stub finishes)", function(done) {
         var original = require('sampleModules/umd/defineFunctionWithDep');
         original.should.be.ok;
 
         umd.stubRequire(['sampleModules/umd/defineFunctionWithDep'], {
-            'sampleModules/umd/defineFunction': function() { return "fake" }
+            'sampleModules/umd/defineFunction': function() {
+                return "fake"
+            }
         }, function(actual) {
             actual.should.be.ok;
 
@@ -192,7 +194,9 @@ describe("umd.stubRequire()", function() {
 
         var d = when.defer();
         umd.stubRequire(['sampleModules/umd/defineFunctionWithDep'], {
-            'sampleModules/umd/defineFunction': function() { return "fake" }
+            'sampleModules/umd/defineFunction': function() {
+                return "fake"
+            }
         }, function(actual) {
             actual.should.be.ok;
 
