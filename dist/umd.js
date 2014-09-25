@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.4.3
+ * @version 0.4.4
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -114,7 +114,9 @@
             contextCount++;
             var stubContext = 'stub' + contextCount;
             var context = contexts[stubContext] = new Context({
-                stubs: stubs
+                stubs: stubs,
+                mapping: contexts.default.config.mapping,
+                paths: contexts.default.config.paths
             });
 
             context.setReloadTargets(deps);
