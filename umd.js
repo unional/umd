@@ -114,7 +114,9 @@
             contextCount++;
             var stubContext = 'stub' + contextCount;
             var context = contexts[stubContext] = new Context({
-                stubs: stubs
+                stubs: stubs,
+                mapping: contexts.default.config.mapping,
+                paths: contexts.default.config.paths
             });
 
             context.setReloadTargets(deps);
