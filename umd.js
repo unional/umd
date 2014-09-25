@@ -8,12 +8,6 @@
 (function(root) {
     "use strict";
 
-    /**
-     *
-     * @type {{nodeJS: {}, requireJS: {}, browser: {}}}
-     */
-    var x = {nodeJS: {}, requireJS: {}, browser: {}};
-
     //noinspection JSUnresolvedVariable
     if (typeof global !== "undefined") {
         // node environment use global as root.
