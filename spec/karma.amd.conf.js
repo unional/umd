@@ -9,7 +9,7 @@ module.exports = function(config) {
 
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['mocha', 'requirejs'],
+        frameworks: ['mocha', 'requirejs', 'sinon-chai'],
 
         // list of files / patterns to load in the browser
         files: [
@@ -17,8 +17,6 @@ module.exports = function(config) {
             'umd.js',
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
             {pattern: 'node_modules/when/**/*.js', included: false},
-            //{pattern: 'node_modules/should/should.js', included: false},
-            {pattern: 'node_modules/chai/chai.js', included: false},
             {pattern: 'spec/amd/*.js', included: false}
         ],
 

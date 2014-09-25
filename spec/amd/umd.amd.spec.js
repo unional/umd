@@ -8,10 +8,6 @@ define(function(require) {
     require('umd');
     var when = require('when');
 
-    var chai = require('../../node_modules/chai/chai');
-    chai.should();
-    var expect = chai.expect;
-    
     describe("require() umd modules", function() {
         it("should get returnObject", function() {
             var actual = require('sampleModules/umd/returnObject');
@@ -73,11 +69,6 @@ define(function(require) {
             }
         };
 
-        it("should not allow . notation", function() {
-            // "." notation does not work in amd and node.js environment.
-            umd.require.bind(this, "umdTest.test").should.throw();
-        });
-
         it("should dereference with / notation", function() {
             var actual = umd.require("umdTest/test/something");
             actual.should.equal(umdTest.test.something);
@@ -108,6 +99,18 @@ define(function(require) {
                 actual.should.equal(umdTest.test.something);
                 done();
             });
+        });
+    });
+
+    describe("umd.require() with mapping", function() {
+        it("should resolve all references correctly", function() {
+            var actual = require('sampleModules/umd/withMapping');
+            actual().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction umd.exportsObject value");
+        });
+
+        it("should resolve all references correctly twice", function() {
+            var actual = require('sampleModules/umd/withMapping2');
+            actual().should.equal("Invoking umdv.defineFunction Invoking umd.defineFunction umd.returnObject value");
         });
     });
 

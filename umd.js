@@ -8,12 +8,73 @@
 (function(root) {
     "use strict";
 
+    /**
+     *
+     * @type {{nodeJS: {}, requireJS: {}, browser: {}}}
+     */
+    var x = {nodeJS: {}, requireJS: {}, browser: {}};
+
     //noinspection JSUnresolvedVariable
     if (typeof global !== "undefined") {
         // node environment use global as root.
         //noinspection JSUnresolvedVariable
         root = global;
     }
+
+    function wrapRequire(require, mapping) {
+        return function(moduleName) {
+            return require(mapping[moduleName] || moduleName);
+        };
+    }
+
+    function wrapDefine(define, require, mapping) {
+        return function() {
+            if (arguments.length > 0 && typeof arguments[0] === "function") {
+                var definitionMethod = arguments[0];
+                var params = getParamNames(definitionMethod);
+                if (params.length > 0 && params[0] === "require") {
+                    var currentContext = require.s.contexts._;
+
+                    // wrap the makeRequire method to inject the wrapped require method.
+                    var makeRequire = currentContext.makeRequire;
+                    currentContext.makeRequire = function() {
+                        var localRequire = makeRequire.apply(currentContext, arguments);
+                        return wrapRequire(localRequire, mapping);
+                    };
+
+                    // Wrap the definition method so that I can restore the makeRequire method
+                    // once the define() has everything setup.
+                    // requireJS looks at the params length to determine whether it is
+                    // function (require) or function (require, exports, module)
+                    // If params only have 'require', it will only load 'require' using deps.
+                    // Therefore I mimic it here so that requireJS will invoke the same logic.
+                    arguments[0] = params.length === 1 ?
+                                   function(require) {
+                                       currentContext.makeRequire = makeRequire;
+                                       return definitionMethod.apply(currentContext, arguments)
+                                   } :
+                                   function(require, exports, module) {
+                                       currentContext.makeRequire = makeRequire;
+                                       return definitionMethod.apply(currentContext, arguments)
+                                   };
+                }
+            }
+            define.apply(this, arguments);
+        }
+    }
+
+    var getParamNames = (function() {
+        var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+        var ARGUMENT_NAMES = /([^\s,]+)/g;
+        return function getParamNames(func) {
+            var fnStr = func.toString().replace(STRIP_COMMENTS, '');
+            var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+            if (result === null) {
+                result = [];
+            }
+            return result
+        };
+    }());
 
     /**
      * Universal module definition method. Use this method to simplify module definition.
@@ -36,15 +97,21 @@
      * @param require Round trip require function (pre-defined)
      * @param exports Round trip exports object (pre-defined)
      * @param module Round trip module object (pre-defined)
+     * @param {{nodeJS: {}, requireJS: {}, browserGlobal: {}}} [mappings] Optional mapping if the require identifiers
+     * are different in different environments.
      */
-    var umd = function(factory, browserGlobalIdentifier, require, exports, module) {
+    var umd = function(factory, browserGlobalIdentifier, require, exports, module, mappings) {
         if (umd.isRequireJS()) {
-            factory(define);
+            var localDefine = (mappings && mappings.requireJS) ?
+                              wrapDefine(define, require, mappings.requireJS) : define;
+            factory(localDefine);
         }
         else if (umd.isNodeJS()) {
             // Node (not CommonJS because module.exports does not conform)
             factory(function(definition) {
-                var result = (typeof definition === "object") ? definition : definition(require, exports, module);
+                var localRequire = (mappings && mappings.nodeJS) ? wrapRequire(require, mappings.nodeJS) : require;
+
+                var result = (typeof definition === "object") ? definition : definition(localRequire, exports, module);
 
                 if (typeof result !== "undefined") {
                     module.exports = result;
@@ -53,7 +120,12 @@
         }
         else {
             // browser global.
-            factory(umd.createDefine(browserGlobalIdentifier));
+            if (mappings && mappings.browserGlobal) {
+                factory(umd.createDefine(browserGlobalIdentifier, mappings.browserGlobal));
+            }
+            else {
+                factory(umd.createDefine(browserGlobalIdentifier));
+            }
         }
     };
 
@@ -81,7 +153,7 @@
         var reloadTargets = [];
         var modules = {};
 
-        function createDefine(browserGlobalIdentifier) {
+        function createDefine(browserGlobalIdentifier, mapping) {
             return function browserGlobalDefine(definition) {
                 var module = {exports: {}};
                 var result;
@@ -89,6 +161,9 @@
                     result = definition;
                 }
                 else {
+                    if (mapping) {
+                        require = wrapRequire(require, mapping);
+                    }
                     result = definition(require, module.exports, module);
                     result = (typeof result !== 'undefined') ? result : module.exports;
                 }
@@ -160,9 +235,6 @@
             }
 
             function resolveModule(moduleName) {
-                if (moduleName.indexOf(".") !== -1) {
-                    throw new Error("Module name cannot have '.' because it will not work in amd/node environment.");
-                }
                 var id = convertToBrowserGlobalIdentifier(moduleName);
                 var stubs = config.stubs || {};
                 if (stubs[id]) {

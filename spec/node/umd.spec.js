@@ -70,11 +70,6 @@ describe("umd.require() global reference", function() {
         }
     };
 
-    it("should not allow . notation", function() {
-        // "." notation does not work in amd and node.js environment.
-        umd.require.bind(this, "umdTest.test").should.throw();
-    });
-
     it("should dereference with / notation", function() {
         var actual = umd.require("umdTest/test/something");
         actual.should.equal(umdTest.test.something);
@@ -105,6 +100,18 @@ describe("umd.require() global reference", function() {
             actual.should.equal(umdTest.test.something);
             done();
         });
+    });
+});
+
+describe("umd.require() with mapping", function() {
+    it("should resolve all references correctly", function() {
+        var actual = require('sampleModules/umd/withMapping');
+        actual().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction umd.exportsObject value");
+    });
+
+    it("should resolve all references correctly twice", function() {
+        var actual = require('sampleModules/umd/withMapping2');
+        actual().should.equal("Invoking umdv.defineFunction Invoking umd.defineFunction umd.returnObject value");
     });
 });
 
