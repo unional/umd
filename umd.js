@@ -91,6 +91,38 @@
         }
     }
 
+    function deepMerge(target, source) {
+        var result = {};
+        var key;
+
+        if (target && typeof target === 'object') {
+            for (key in target) {
+                if (target.hasOwnProperty(key)) {
+                    result[key] = target[key];
+                }
+            }
+        }
+
+        for (key in source) {
+            if (source.hasOwnProperty(key)) {
+                var value = source[key];
+                if (typeof value !== 'object' || !value) {
+                    result[key] = value;
+                }
+                else {
+                    if (!target[key]) {
+                        result[key] = value;
+                    }
+                    else {
+                        result[key] = deepMerge(target[key], value);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     function convertToBrowserGlobalIdentifier(dep) {
         return dep.replace(/\./g, '/');
     }
@@ -169,7 +201,7 @@
     function Context(config) {
         this.reloadTargets = [];
         this.modules = {};
-        this.config = config;
+        this.config = deepMerge({ mapping: {}, paths: {}}, config);
 
         var self = this;
         /**
@@ -235,7 +267,7 @@
             if (option.context) {
                 context = contexts[option.context];
                 if (!context) {
-                    context = contexts[option.context] = newContext(option);
+                    context = contexts[option.context] = new Context(option);
                 }
                 else {
                     context.updateConfig(option);
@@ -278,7 +310,7 @@
     }
 
     Context.prototype.updateConfig = function updateConfig(config) {
-        this.config = config;
+        this.config = deepMerge(this.config, config);
     };
 
     Context.prototype.setReloadTargets = function setReloadTargets(deps) {
