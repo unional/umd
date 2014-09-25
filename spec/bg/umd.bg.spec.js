@@ -293,3 +293,10 @@ describe("umd", function() {
         (typeof define === "function" && define.amd).should.be.false;
     });
 });
+
+describe("umd.require.config()", function() {
+    it("should support full id mapping", function() {
+        var actual = require('sampleModules/umd/mappedModule');
+        actual().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction umd.exportsObject value");
+    }); 
+});

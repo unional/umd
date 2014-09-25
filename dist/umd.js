@@ -129,9 +129,7 @@
         }
     };
 
-    var contexts = {
-        "default": newContext({})
-    };
+    var contexts = {};
 
     /**
      * Definitions of modules referenced using umd.require().
@@ -144,6 +142,172 @@
      * @type {number}
      */
     var contextCount = 0;
+
+    function Context(config) {
+        this.reloadTargets = [];
+        this.modules = {};
+        this.config = { mapping: {}, paths: {}};
+
+        /**
+         * A simple stub for requireJS and commonJS require function.
+         * This is use to support universal module definition (umd) for browser globals code.
+         * @param {string|string[]} moduleName Name of the module.
+         * @param {function} [callback] Function to call after resolving the module.
+         * @param {function} [errback] Error back function.
+         * @returns {*} The target module if found; otherwise, undefined.
+         */
+        this.require = function require(moduleName, callback, errback) {
+            var self = this;
+            var error;
+            if (!moduleName) {
+                error = new Error("moduleName can't be empty");
+                if (errback) {
+                    errback(error);
+                    return;
+                }
+                else {
+                    throw error;
+                }
+            }
+
+            var module;
+            try {
+                if (Array.isArray(moduleName)) {
+                    var results = moduleName.map(function(item) {
+                        return resolveModule(item);
+                    });
+
+                    if (results && callback) {
+                        callback.apply(this, results);
+                    }
+                }
+                else {
+                    module = resolveModule(moduleName);
+
+                    if (module && callback) {
+                        callback(module);
+                    }
+
+                    return module;
+                }
+            }
+            catch (error) {
+                if (errback) {
+                    errback(error);
+                }
+
+                throw error;
+            }
+
+            function resolveModule(moduleName) {
+                var id = convertToBrowserGlobalIdentifier(moduleName);
+                var stubs = config.stubs || {};
+                if (stubs[id]) {
+                    return stubs[id];
+                }
+
+                if (self.reloadTargets.indexOf(id) !== -1) {
+
+                    var definition = definitions[id];
+                    if (definition) {
+                        this.createDefine(id)(definition);
+                    }
+                }
+
+                if (self.modules[id]) {
+                    return self.modules[id];
+                }
+
+                var parts = moduleName.split('!', 2);
+                var arg = undefined;
+                if (parts.length == 2) {
+                    moduleName = parts[0];
+                    if (parts[1]) {
+                        arg = parts[1];
+                    }
+                }
+
+                var names = moduleName.split(/[.\/]/);
+                var name = names.shift();
+
+                var module = root[name];
+                while (module && names.length) {
+                    name = names.shift();
+                    module = module[name];
+                }
+
+                if (parts.length == 2) {
+                    module = module(arg);
+                }
+
+                return module;
+            }
+        };
+        /**
+         * Config require similar to requireJS.
+         * @param {object} option Config option.
+         * @param {string} [option.context] Context name. If not specified, it modifies the default context.
+         * @param {object} [option.map] Map shorthands.
+         * @returns {*}
+         */
+        this.require.config = function requireConfig(option) {
+            var context = contexts.default;
+            if (option.context) {
+                context = contexts[option.context];
+                if (!context) {
+                    context = contexts[option.context] = newContext(option);
+                }
+                else {
+                    context.updateConfig(option);
+                }
+            }
+            else {
+                context.updateConfig(option);
+            }
+
+            return context.require;
+        };
+    }
+
+    Context.prototype.createDefine = function createDefine(browserGlobalIdentifier, mapping) {
+        var self = this;
+        return function browserGlobalDefine(definition) {
+            var module = {exports: {}};
+            var result;
+            if (typeof definition === "object") {
+                result = definition;
+            }
+            else {
+                var localRequire = (mapping) ? wrapRequire(this.require, mapping) : this.require;
+                result = definition(localRequire, module.exports, module);
+                result = (typeof result !== 'undefined') ? result : module.exports;
+            }
+
+            if (browserGlobalIdentifier) {
+                var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
+                definitions[defId] = definition;
+
+                if (self.reloadTargets.indexOf(defId) === -1) {
+                    var terms = browserGlobalIdentifier.split(/[.\/]/);
+                    var id = terms.pop();
+                    var base = umd.ns(terms.join("."));
+                    base[id] = result;
+                }
+
+                self.modules[defId] = result;
+            }
+        };
+    };
+
+    Context.prototype.updateConfig = function updateConfig(config) {
+        this.config = config;
+    };
+
+    Context.prototype.setReloadTargets = function setReloadTargets(deps) {
+        this.reloadTargets = deps.map(function(dep) {
+            return convertToBrowserGlobalIdentifier(dep);
+        });
+    };
 
     /**
      * Create new context.
@@ -279,18 +443,45 @@
             }
         };
 
+        /**
+         * Config require similar to requireJS.
+         * @param {object} option Config option.
+         * @param {string} [option.context] Context name. If not specified, it modifies the default context.
+         * @param {object} [option.map] Map shorthands.
+         * @returns {*}
+         */
+        function requireConfig(option) {
+            var context = contexts.default;
+            if (option.context) {
+                context = contexts[option.context];
+                if (!context) {
+                    context = contexts[option.context] = newContext(option);
+                }
+                else {
+                    context.updateOption(option);
+                }
+            }
+            else {
+                context.updateOption(option);
+            }
+
+            return context.require;
+        }
+
         require.config = requireConfig;
 
-        return {
+        var context = {
             setReloadTargets: function(deps) {
                 reloadTargets = deps.map(function(dep) {
                     return convertToBrowserGlobalIdentifier(dep);
                 });
             },
-            config: config,
+            updateConfig: updateConfig,
             require: require,
             createDefine: createDefine
         };
+
+        return context;
     }
 
     /**
@@ -350,23 +541,6 @@
 
     function convertToBrowserGlobalIdentifier(dep) {
         return dep.replace(/\./g, '/');
-    }
-
-    /**
-     * Config require similar to requireJS.
-     * @param {object} option Config option.
-     * @param {string} [option.context] Context name. If not specified, it modifies the default context.
-     * @param {object} [option.map] Map shorthands.
-     * @returns {*}
-     */
-    function requireConfig(option) {
-        if (option.context) {
-            return contexts[option.context] = contexts[option.context] || newContext(option);
-        }
-        else {
-            contexts.default.updateOption(option);
-            return contexts.default.require;
-        }
     }
 
     /**

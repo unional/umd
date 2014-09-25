@@ -28,6 +28,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umdv/defineFunctionWithDep.js",
             "node_modules/sampleModules/umd/withMapping.js",
             "node_modules/sampleModules/umd/withMapping2.js",
+            "node_modules/sampleModules/umd/mappedModule.js",
             "spec/lib/when.js",
             "spec/bg/*.js"
         ],
