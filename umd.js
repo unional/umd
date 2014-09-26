@@ -130,7 +130,8 @@
     /**
      * Require dependencies while injects specified stubs.
      * @param {[]} deps Dependencies
-     * @param {object} stubs Stubs `{ "moduleA": stubA }`
+     * @param {object} stubs Stubs `{ "moduleA": stubA }`. Can be null, undefined, or empty object.
+     * In that case the deps will still be reloaded.
      * @param {function} callback The callback function.
      * @param {function} [errback] The error back function.
      * @returns {Function|*}
@@ -157,11 +158,11 @@
         }
         else if (require.defined) {
             // require.js
-            contextCount++;
             var map = {};
-
+            var hasStubs = false;
             for (var key in stubs) {
                 if (stubs.hasOwnProperty(key)) {
+                    hasStubs = true;
                     var stubName = 'stub' + key + contextCount;
                     map[key] = stubName;
                     (function(key) {
@@ -173,24 +174,40 @@
                 }
             }
 
-            var contextName = "context_" + contextCount;
-            var result = require.config({
-                context: contextName,
-                map: {
-                    "*": map
-                },
-                baseUrl: require.s.contexts._.config.baseUrl,
-                paths: require.s.contexts._.config.paths
-            });
+            if (hasStubs) {
+                contextCount++;
+                var contextName = "context_" + contextCount;
+                var config = {
+                    context: contextName,
+                    baseUrl: require.s.contexts._.config.baseUrl,
+                    paths: require.s.contexts._.config.paths
+                };
 
-            var parentDefined = require.s.contexts._.defined;
-            for (var m in parentDefined) {
-                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
-                    require.s.contexts[contextName].defined[m] = parentDefined[m];
+                if (hasStubs) {
+                    config.map = {
+                        "*": map
+                    };
                 }
-            }
 
-            result(deps, callback, errback);
+                var result = require.config(config);
+
+                var parentDefined = require.s.contexts._.defined;
+                for (var m in parentDefined) {
+                    if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
+                        require.s.contexts[contextName].defined[m] = parentDefined[m];
+                    }
+                }
+
+                result(deps, callback, errback);
+            }
+            else {
+                // There are no stubs. Remove cache and reload the modules in deps.
+                for (var dep in deps) {
+                    require.undef(deps[dep]);
+                }
+
+                require(deps, callback, errback);
+            }
         }
         else {
             // node
@@ -201,7 +218,7 @@
     function Context(config) {
         this.reloadTargets = [];
         this.modules = {};
-        this.config = deepMerge({ mapping: {}, paths: {}}, config);
+        this.config = deepMerge({mapping: {}, paths: {}}, config);
 
         var self = this;
         /**
@@ -360,7 +377,6 @@
             names = subNames.concat(names);
             name = names.shift();
         }
-
 
         var module = root[name];
         while (module && names.length) {

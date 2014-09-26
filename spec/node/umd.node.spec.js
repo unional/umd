@@ -210,6 +210,32 @@ describe("umd.stubRequire()", function() {
             done();
         });
     });
+
+    it("should reload dependencies if stubs is empty", function(done) {
+        var original = require('sampleModules/umd/withSecret');
+        umd.stubRequire(['sampleModules/umd/withSecret'], {}, function(actual) {
+            actual().should.not.equal(original());
+            done();
+        });
+    });
+
+    it("should reload dependencies if stubs is null", function(done) {
+        var original = require('sampleModules/umd/withSecret');
+
+        umd.stubRequire(['sampleModules/umd/withSecret'], null, function(actual) {
+            actual().should.not.equal(original());
+            done();
+        });
+    });
+
+    it("should reload dependencies if stubs is undefined", function(done) {
+        var original = require('sampleModules/umd/withSecret');
+
+        umd.stubRequire(['sampleModules/umd/withSecret'], undefined, function(actual) {
+            actual().should.not.equal(original());
+            done();
+        });
+    });
 });
 
 describe("umd.ns()", function() {

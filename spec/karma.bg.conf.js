@@ -29,6 +29,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/withMapping.js",
             "node_modules/sampleModules/umd/withMapping2.js",
             "node_modules/sampleModules/umd/mappedModule.js",
+            "node_modules/sampleModules/umd/withSecret.js",
             "spec/lib/when.js",
             "spec/bg/*.js"
         ],
