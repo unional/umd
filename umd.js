@@ -177,11 +177,7 @@
             if (hasStubs) {
                 contextCount++;
                 var contextName = "context_" + contextCount;
-                var config = {
-                    context: contextName,
-                    baseUrl: require.s.contexts._.config.baseUrl,
-                    paths: require.s.contexts._.config.paths
-                };
+                var config = deepMerge({ context: contextName}, require.s.contexts._.config);
 
                 if (hasStubs) {
                     config.map = {
