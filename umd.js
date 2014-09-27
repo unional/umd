@@ -49,13 +49,29 @@
         root = global;
     }
 
-    function wrapRequire(require, mapping) {
+    function resolveModuleName(moduleName, paths) {
+        for (var path in paths) {
+            if (paths.hasOwnProperty(path)) {
+                var pathIndex = moduleName.indexOf(path);
+                if (pathIndex === 0) {
+                    moduleName = moduleName.replace(path, paths[path]);
+                }
+            }
+        }
+        return moduleName;
+    }
+
+    function convertToBrowserGlobalIdentifier(moduleName, paths) {
+        return resolveModuleName(moduleName, paths).replace(/[\.\/]/g, '.')
+    }
+
+    function wrapRequire(require, paths) {
         return function(moduleName) {
-            return require(mapping[moduleName] || moduleName);
+            return require(resolveModuleName(moduleName, paths));
         };
     }
 
-    function wrapDefine(define, require, mapping) {
+    function wrapDefine(define, require, paths) {
         return function() {
             if (arguments.length > 0 && typeof arguments[0] === "function") {
                 var definitionMethod = arguments[0];
@@ -67,7 +83,7 @@
                     var makeRequire = currentContext.makeRequire;
                     currentContext.makeRequire = function() {
                         var localRequire = makeRequire.apply(currentContext, arguments);
-                        return wrapRequire(localRequire, mapping);
+                        return wrapRequire(localRequire, paths);
                     };
 
                     // Wrap the definition method so that I can restore the makeRequire method
@@ -123,10 +139,6 @@
         return result;
     }
 
-    function convertToBrowserGlobalIdentifier(dep) {
-        return dep.replace(/\./g, '/');
-    }
-
     /**
      * Require dependencies while injects specified stubs.
      * @param {[]} deps Dependencies
@@ -146,13 +158,26 @@
             // browser global
             contextCount++;
             var stubContext = 'stub' + contextCount;
+
+            var paths = contexts.default.config.paths;
+            var normalizedStubs = {};
+            for (var key in stubs) {
+                if (stubs.hasOwnProperty(key)) {
+                    normalizedStubs[convertToBrowserGlobalIdentifier(key, paths)] = stubs[key];
+                }
+            }
+
             var context = contexts[stubContext] = new Context({
-                stubs: stubs,
-                mapping: contexts.default.config.mapping,
-                paths: contexts.default.config.paths
+                stubs: normalizedStubs,
+                paths: paths
             });
 
-            context.setReloadTargets(deps);
+            // Optimize to skip module referencing if they are already referenced before.
+            context.modules = deepMerge(contexts.default.modules);
+
+            context.setReloadTargets(deps.map(function(dep) {
+                return convertToBrowserGlobalIdentifier(dep, paths);
+            }));
 
             context.require(deps, callback, errback);
         }
@@ -221,7 +246,7 @@
     function Context(config) {
         this.reloadTargets = [];
         this.modules = {};
-        this.config = deepMerge({mapping: {}, paths: {}}, config);
+        this.config = deepMerge({paths: {}}, config);
 
         var self = this;
         /**
@@ -278,8 +303,8 @@
          * Config require similar to requireJS.
          * @param {object} option Config option.
          * @param {string} [option.context] Context name. If not specified, it modifies the default context.
-         * @param {object} [option.mapping] Module name mapping. "func": "sampleModules/umd/defineFunction"
-         * @param {object} [option.paths] Mapping for the FIRST component of the module name. ".": "sampleModules/umd"
+         * @param {object} [option.paths] Mapping for module name. ".": "sampleModules/umd", "func": "sampleModules/umd/defineFunction"
+         * see _umd.require.config.js for detail.
          * @returns {*}
          */
         this.require.config = function requireConfig(option) {
@@ -299,7 +324,7 @@
 
             return context.require;
         };
-        this.createDefine = function createDefine(browserGlobalIdentifier, mapping) {
+        this.createDefine = function createDefine(browserGlobalIdentifier, paths) {
             return function browserGlobalDefine(definition) {
                 var module = {exports: {}};
                 var result;
@@ -307,26 +332,26 @@
                     result = definition;
                 }
                 else {
-                    var localRequire = (mapping) ? wrapRequire(self.require, mapping) : self.require;
+                    var localRequire = (paths) ? wrapRequire(self.require, paths) : self.require;
                     result = definition(localRequire, module.exports, module);
                     result = (typeof result !== 'undefined') ? result : module.exports;
                 }
 
                 if (browserGlobalIdentifier) {
-                    var defId = convertToBrowserGlobalIdentifier(browserGlobalIdentifier);
-                    definitions[defId] = definition;
+                    definitions[browserGlobalIdentifier] = definition;
 
-                    if (self.reloadTargets.indexOf(defId) === -1) {
+                    if (self.reloadTargets.indexOf(browserGlobalIdentifier) === -1) {
                         var terms = browserGlobalIdentifier.split(/[.\/]/);
                         var id = terms.pop();
                         var base = umd.ns(terms.join("."));
                         base[id] = result;
                     }
 
-                    self.modules[defId] = result;
+                    self.modules[browserGlobalIdentifier] = result;
                 }
             };
         };
+
     }
 
     Context.prototype.updateConfig = function updateConfig(config) {
@@ -334,16 +359,15 @@
     };
 
     Context.prototype.setReloadTargets = function setReloadTargets(deps) {
-        this.reloadTargets = deps.map(function(dep) {
-            return convertToBrowserGlobalIdentifier(dep);
-        });
+        this.reloadTargets = deps;
     };
 
     Context.prototype.resolveModule = function resolveModule(moduleName) {
-        var id = convertToBrowserGlobalIdentifier(moduleName);
         var stubs = this.config.stubs || {};
         var mapping = this.config.mapping || {};
         var paths = this.config.paths || {};
+
+        var id = convertToBrowserGlobalIdentifier(moduleName, paths);
 
         if (stubs[id]) {
             return stubs[id];
@@ -394,7 +418,7 @@
         return module;
     };
 
-    contexts.default = new Context({mapping: {}, paths: {}});
+    contexts.default = new Context();
 
     // ********** PUBLIC API ************
 
@@ -419,19 +443,19 @@
      * @param require Round trip require function (pre-defined)
      * @param exports Round trip exports object (pre-defined)
      * @param module Round trip module object (pre-defined)
-     * @param {{nodeJS: {}, requireJS: {}, browserGlobal: {}}} [mappings] Optional mapping if the require identifiers
+     * @param {{nodeJS: {}, requireJS: {}, browserGlobal: {}}} [paths] Optional config paths fo the require identifiers
      * are different in different environments.
      */
-    var umd = function(factory, browserGlobalIdentifier, require, exports, module, mappings) {
+    var umd = function(factory, browserGlobalIdentifier, require, exports, module, paths) {
         if (umd.isRequireJS()) {
-            var localDefine = (mappings && mappings.requireJS) ?
-                              wrapDefine(define, require, mappings.requireJS) : define;
+            var localDefine = (paths && paths.requireJS) ?
+                              wrapDefine(define, require, paths.requireJS) : define;
             factory(localDefine);
         }
         else if (umd.isNodeJS()) {
             // Node (not CommonJS because module.exports does not conform)
             factory(function(definition) {
-                var localRequire = (mappings && mappings.nodeJS) ? wrapRequire(require, mappings.nodeJS) : require;
+                var localRequire = (paths && paths.nodeJS) ? wrapRequire(require, paths.nodeJS) : require;
 
                 var result = (typeof definition === "object") ? definition : definition(localRequire, exports, module);
 
@@ -442,8 +466,8 @@
         }
         else {
             // browser global.
-            if (mappings && mappings.browserGlobal) {
-                factory(umd.createDefine(browserGlobalIdentifier, mappings.browserGlobal));
+            if (paths && paths.browserGlobal) {
+                factory(umd.createDefine(browserGlobalIdentifier, paths.browserGlobal));
             }
             else {
                 factory(umd.createDefine(browserGlobalIdentifier));

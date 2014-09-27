@@ -17,10 +17,20 @@ You can also write your module in the traditional umd style and use some of the 
 
 In the package, you will find live templates (for phpStorm and webStorm), and r.js build config, etc.
 
+## Why would you use this module?
+### Create modules that work in all environments
+duh...
+
+### Write tests once that work in all enviornments
+Write your tests in umd and they will work in all enviornments.
+`write-umd` also supports stubbing dependencies through `umd.stubRequire` which also works in requireJS and browser global environment (NodeJS will be supported in the future)
+
+### Convert from browser global to amd/commonJS
+You can use `write-umd` to incrementally convert your application/library to use amd or commonJS. What you need to do is load `write-umd` and convert each file one at a time. When you changed your whole application to umd, you can switch over to amd (requireJS) or commonJS (node-browserify).
 
 ## Installation
 
-	npm install write-umd
+	npm install write-umd		
 
 ## Usage
 The easiest way is to use the included live template for phpStorm/webStorm to create the boilerplate for you.
@@ -73,3 +83,13 @@ I believe the node.js way is easier to write because you typically add dependent
 
 ## License
 MIT
+
+## Backlog
+
+### Browser Global
+
+* Support out of order loading
+
+### CommonJS
+
+* Implement `umd.stubRequire`

@@ -14,6 +14,7 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files: [
             "umd.js",
+            "node_modules/sampleModules/umd/_umd.require.config.js",
             "node_modules/sampleModules/umd/defineFunction.js",
             "node_modules/sampleModules/umd/defineObject.js",
             "node_modules/sampleModules/umd/exportsObject.js",
@@ -30,6 +31,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/withMapping2.js",
             "node_modules/sampleModules/umd/mappedModule.js",
             "node_modules/sampleModules/umd/withSecret.js",
+            "node_modules/sampleModules/umd/withPath.js",
             "spec/lib/when.js",
             "spec/bg/*.js"
         ],

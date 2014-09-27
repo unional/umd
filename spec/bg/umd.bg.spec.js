@@ -19,6 +19,14 @@ window.umdTest = {
 };
 
 describe("require() umd modules", function() {
+    //it("should setup config", function() {
+    //    umd.require.config({
+    //        paths: {
+    //            "XYZ": "abvc"
+    //        }
+    //    });
+    //});
+
     it("should get returnObject", function() {
         var actual = require('sampleModules/umd/returnObject');
         actual.should.eql({value: "umd.returnObject value"});
@@ -100,6 +108,13 @@ describe("umd.require() global reference", function() {
             actual.should.equal(umdTest.test.something);
             done();
         });
+    });
+});
+
+describe("umd.require() with path", function() {
+    it("should resolve with path correctly", function() {
+        var actual = require('sm/umd/withPath');
+        actual.should.equal(true);
     });
 });
 
