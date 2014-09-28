@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.4.9
+ * @version 0.4.8
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -161,7 +161,8 @@
 
             var paths = contexts.default.config.paths;
             var normalizedStubs = {};
-            for (var key in stubs) {
+            var key;
+            for (key in stubs) {
                 if (stubs.hasOwnProperty(key)) {
                     normalizedStubs[convertToBrowserGlobalIdentifier(key, paths)] = stubs[key];
                 }
@@ -185,7 +186,7 @@
             // require.js
             var map = {};
             var hasStubs = false;
-            for (var key in stubs) {
+            for (key in stubs) {
                 if (stubs.hasOwnProperty(key)) {
                     hasStubs = true;
                     var stubName = 'stub' + key + contextCount;
@@ -230,8 +231,9 @@
             }
             else {
                 // There are no stubs. Remove cache and reload the modules in deps.
-                for (var dep in deps) {
-                    require.undef(deps[dep]);
+                for (key in deps) {
+                    if (deps.hasOwnProperty(key))
+                        require.undef(deps[key]);
                 }
 
                 require(deps, callback, errback);
