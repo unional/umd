@@ -1,6 +1,6 @@
 {
   "name": "write-umd",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Write Universal Module Definition modules with ease",
   "main": "umd.js",
   "scripts": {
