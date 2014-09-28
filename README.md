@@ -86,6 +86,10 @@ MIT
 
 ## Backlog
 
+### Overall
+
+* Break umd.js to umd.requireJS.js, umd.browserGlobal.js, and umd.nodeJS.js
+
 ### Browser Global
 
 * Support out of order loading
