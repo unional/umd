@@ -32,6 +32,7 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/mappedModule.js",
             "node_modules/sampleModules/umd/withSecret.js",
             "node_modules/sampleModules/umd/withPath.js",
+            "node_modules/sampleModules/umd/simplePlugin.js",
             "spec/lib/when.js",
             "spec/bg/*.js"
         ],

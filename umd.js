@@ -168,7 +168,6 @@
             }
 
             var context = contexts[stubContext] = new Context({
-                context: stubContext,
                 stubs: normalizedStubs,
                 paths: paths
             });
@@ -250,6 +249,19 @@
         this.config = deepMerge({paths: {}}, config);
 
         var self = this;
+
+        function resolveChain(moduleNames, results) {
+            if (moduleNames.length === 0) {
+                return;
+            }
+
+            var moduleName = moduleNames.shift();
+            self.resolveModule(moduleName, function(result) {
+                results.push(result);
+                resolveChain(moduleNames, results);
+            });
+        }
+
         /**
          * A simple stub for requireJS and commonJS require function.
          * This is use to support universal module definition (umd) for browser globals code.
@@ -271,25 +283,18 @@
                 }
             }
 
-            var module;
             try {
                 if (Array.isArray(moduleName)) {
-                    var results = moduleName.map(function(item) {
-                        return self.resolveModule(item);
-                    });
+
+                    var results = [];
+                    resolveChain(moduleName, results);
 
                     if (results && callback) {
                         callback.apply(this, results);
                     }
                 }
                 else {
-                    module = self.resolveModule(moduleName);
-
-                    if (module && callback) {
-                        callback(module);
-                    }
-
-                    return module;
+                    return self.resolveModule(moduleName, callback, errback);
                 }
             }
             catch (error) {
@@ -364,7 +369,7 @@
         this.reloadTargets = deps;
     };
 
-    Context.prototype.resolveModule = function resolveModule(moduleName) {
+    Context.prototype.resolveModule = function resolveModule(moduleName, callback, errback) {
         var stubs = this.config.stubs || {};
         var mapping = this.config.mapping || {};
         var paths = this.config.paths || {};
@@ -372,6 +377,9 @@
         var id = convertToBrowserGlobalIdentifier(moduleName, paths);
 
         if (stubs[id]) {
+            if (callback) {
+                callback(stubs[id]);
+            }
             return stubs[id];
         }
 
@@ -384,6 +392,9 @@
         }
 
         if (this.modules[id]) {
+            if (callback) {
+                callback(this.modules[id]);
+            }
             return this.modules[id];
         }
 
@@ -413,8 +424,16 @@
             module = module[name];
         }
 
-        if (parts.length == 2) {
-            module = module(arg);
+        if (parts.length == 2 && module && typeof module.load === "function") {
+            // invoke callback when module is loaded.
+            var onLoad = callback || function(value) {  module = value; };
+            onLoad.error = errback || function() {};
+
+            module.load(arg, this.require, onLoad, this.config);
+        }
+
+        if (callback) {
+            callback(module);
         }
 
         return module;

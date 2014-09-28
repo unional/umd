@@ -67,6 +67,11 @@ describe("require() umd modules", function() {
         actual = require('sampleModules/umdv/defineFunctionWithDep');
         actual().should.equal("Invoking umdv.defineFunction Invoking umd.defineFunction");
     });
+
+    it("should ignore ! syntax if the module does not implement plugin api.", function() {
+        var actual = umd.require("umdTest/test/someFunc!");
+        actual.should.equal(umdTest.test.someFunc);
+    });
 });
 
 describe("umd.require() global reference", function() {
@@ -82,25 +87,6 @@ describe("umd.require() global reference", function() {
 
         actual = umd.require("umdTest/test/NotExist");
         expect(actual).to.be.undefined;
-    });
-
-    it("should throw error if param is empty", function() {
-        umd.require.bind(null, null).should.throw();
-    });
-
-    it("should invoke the reference with ! syntax", function() {
-        var actual = umd.require("umdTest/test/someFunc!");
-        actual.should.equal("defaultValue");
-
-        actual = umd.require("umdTest/test/someFunc!MyValue");
-        actual.should.equal("MyValue");
-    });
-
-    it("should invoke callback with the resolved module", function(done) {
-        umd.require("umdTest/test/something", function(actual) {
-            actual.should.equal(umdTest.test.something);
-            done();
-        });
     });
 });
 

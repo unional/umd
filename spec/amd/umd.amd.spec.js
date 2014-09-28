@@ -68,6 +68,35 @@ define(function(require) {
         });
     });
 
+    describe("umd.require([], func)", function() {
+        it("should invoke callback with the resolved module", function(done) {
+            require(["sampleModules/umd/defineObject"], function(actual) {
+                actual.should.exist;
+                actual.value.should.equal("umd.defineObject value");
+                done();
+            });
+        });
+    });
+
+    describe("umd.require() plugin syntax", function() {
+
+        it("should ignore ! syntax if the module does not implement plugin api.", function() {
+            var actual = umd.require("umdTest/test/someFunc!");
+            actual.should.equal(umdTest.test.someFunc);
+        });
+
+        it("should invoke the reference with ! syntax", function() {
+            var actual = require("sampleModules/umd/simplePlugin!test");
+            actual.should.equal("processed test");
+        });
+
+        it("should invoke callback with ! syntax", function() {
+            require(["sampleModules/umd/simplePlugin!test"], function(actual) {
+                actual.should.equal("processed test");
+            });
+        });
+    });
+
     describe("umd.require() global reference", function() {
 
         it("should dereference with / notation", function() {
@@ -81,25 +110,6 @@ define(function(require) {
 
             actual = umd.require("umdTest/test/NotExist");
             expect(actual).to.be.undefined;
-        });
-
-        it("should throw error if param is empty", function() {
-            umd.require.bind(null, null).should.throw();
-        });
-
-        it("should invoke the reference with ! syntax", function() {
-            var actual = umd.require("umdTest/test/someFunc!");
-            actual.should.equal("defaultValue");
-
-            actual = umd.require("umdTest/test/someFunc!MyValue");
-            actual.should.equal("MyValue");
-        });
-
-        it("should invoke callback with the resolved module", function(done) {
-            umd.require("umdTest/test/something", function(actual) {
-                actual.should.equal(umdTest.test.something);
-                done();
-            });
         });
     });
 
