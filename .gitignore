@@ -1,1 +1,6 @@
 sample/out
+node_modules/.bin
+node_modules/chai
+node_modules/mocha
+node_modules/when
+node_modules/requirejs
