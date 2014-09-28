@@ -49,6 +49,19 @@
         root = global;
     }
 
+    function getHashCode(str) {
+        var hash = 0, i, chr, len;
+        if (str.length == 0) {
+            return hash;
+        }
+        for (i = 0, len = str.length; i < len; i++) {
+            chr = this.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    }
+
     function resolveModuleName(moduleName, paths) {
         for (var path in paths) {
             if (paths.hasOwnProperty(path)) {
@@ -331,7 +344,17 @@
 
             return context.require;
         };
-        this.createDefine = function createDefine(browserGlobalIdentifier, paths) {
+        this.createDefine = function createDefine(registerFunc, identifier, paths) {
+            //createDefine(registerFunc, identifier, paths)
+            //createDefine(registerFunc, identifier)
+            //createDefine(identifier, paths);
+            //createDefine(identifier);
+            if (typeof registerFunc === "string") {
+                registerFunc = undefined;
+                identifier = arguments[0];
+                paths = arguments[1];
+            }
+
             return function browserGlobalDefine(definition) {
                 var module = {exports: {}};
                 var result;
@@ -344,21 +367,23 @@
                     result = (typeof result !== 'undefined') ? result : module.exports;
                 }
 
-                if (browserGlobalIdentifier) {
-                    definitions[browserGlobalIdentifier] = definition;
+                if (registerFunc) {
+                    registerFunc(identifier, result);
+                }
+                else {
+                    definitions[identifier] = definition;
 
-                    if (self.reloadTargets.indexOf(browserGlobalIdentifier) === -1) {
-                        var terms = browserGlobalIdentifier.split(/[.\/]/);
+                    if (self.reloadTargets.indexOf(identifier) === -1) {
+                        var terms = identifier.split(/[.\/]/);
                         var id = terms.pop();
                         var base = umd.ns(terms.join("."));
                         base[id] = result;
                     }
 
-                    self.modules[browserGlobalIdentifier] = result;
+                    self.modules[identifier] = result;
                 }
             };
         };
-
     }
 
     Context.prototype.updateConfig = function updateConfig(config) {
@@ -371,7 +396,7 @@
 
     Context.prototype.resolveModule = function resolveModule(moduleName, callback, errback) {
         var stubs = this.config.stubs || {};
-        var mapping = this.config.mapping || {};
+
         var paths = this.config.paths || {};
 
         var id = convertToBrowserGlobalIdentifier(moduleName, paths);
@@ -397,8 +422,6 @@
             }
             return this.modules[id];
         }
-
-        moduleName = mapping[moduleName] || moduleName;
 
         var parts = moduleName.split('!', 2);
         var arg = undefined;
@@ -426,8 +449,11 @@
 
         if (parts.length == 2 && module && typeof module.load === "function") {
             // invoke callback when module is loaded.
-            var onLoad = callback || function(value) {  module = value; };
-            onLoad.error = errback || function() {};
+            var onLoad = callback || function(value) {
+                    module = value;
+                };
+            onLoad.error = errback || function() {
+            };
 
             module.load(arg, this.require, onLoad, this.config);
         }
@@ -460,14 +486,88 @@
      * (at common/main.js where you write require.config({...}))
      * For r.js, you can use onBuildRead to trim out the umd code, just leaving the define call in-place.
      * @param factory
-     * @param {string|null} browserGlobalIdentifier Identifier for browser global. Pass in falsy value to omit browser global definition.
+     * @param {function(string, object)} [registerFunc] Optional. The registration method to use instead of registering
+     * the module as browser global. If this param is specified, the identifier must also be specified.
+     * @param {string} [identifier] Identifier of the module. If registerFunc is specified, this will be passed as the first
+     * parameter. If registerFunc is not specified, this is the identifier for browser global.
+     * Pass in falsy value to omit browser global definition.
+     * Pass in a function(module) to enable custom registration (such as plugin, Ext.reg, etc).
      * @param require Round trip require function (pre-defined)
      * @param exports Round trip exports object (pre-defined)
      * @param module Round trip module object (pre-defined)
      * @param {{nodeJS: {}, requireJS: {}, browserGlobal: {}}} [paths] Optional config paths fo the require identifiers
      * are different in different environments.
      */
-    var umd = function(factory, browserGlobalIdentifier, require, exports, module, paths) {
+    var umd = function(factory, registerFunc, identifier, paths, require, exports, module) {
+        if (typeof arguments[1] === "string") {
+            if (arguments.length === 6) {
+                // umd(factory, identifier, paths, require, exports, module)
+                if (typeof arguments[2] !== "object" || (
+                    typeof arguments[3] !== "function" &&
+                    typeof arguments[3] !== "undefined")) {
+                    throw new Error("Invalid arguments.");
+                }
+
+                registerFunc = undefined;
+                identifier = arguments[1];
+                paths = arguments[2];
+                require = arguments[3];
+                exports = arguments[4];
+                module = arguments[5];
+            }
+            else if (arguments.length === 5) {
+                // umd(factory, identifier, require, exports, module)
+                // In browser global environment require is undefined.
+                if (typeof arguments[2] !== "function" &&
+                typeof arguments[2] !== "undefined") {
+                    throw new Error("Invalid arguments");
+                }
+
+                registerFunc = null;
+                identifier = arguments[1];
+                paths = null;
+                require = arguments[2];
+                exports = arguments[3];
+                module = arguments[4];
+            }
+            else {
+                throw new Error("Invalid arguments");
+            }
+        }
+        else if (typeof arguments[1] === "function" && typeof arguments[2] !== "string") {
+            // umd(factory, require, exports, module)
+            if (arguments.length !== 4) {
+                throw new Error("Invalid arguments");
+            }
+
+            registerFunc = null;
+            identifier = null;
+            paths = null;
+            require = arguments[1];
+            exports = arguments[2];
+            module = arguments[3];
+        }
+        else if (typeof arguments[1] === "object") {
+            // umd(factory, paths, require, exports, module)
+            if (typeof arguments[2] !== "function" ||
+                arguments.length !== 5) {
+                throw new Error("Invalid arguments");
+            }
+            registerFunc = null;
+            identifier = null;
+            paths = arguments[1];
+            require = arguments[2];
+            exports = arguments[3];
+            module = arguments[4];
+        }
+        else if (typeof paths === "function") {
+            // umd(factory, registerFunc, identifier, require, exports, module)
+            paths = null;
+            require = arguments[3];
+            exports = arguments[4];
+            module = arguments[5];
+        }
+
         if (umd.isRequireJS()) {
             var localDefine = (paths && paths.requireJS) ?
                               wrapDefine(define, require, paths.requireJS) : define;
@@ -488,10 +588,10 @@
         else {
             // browser global.
             if (paths && paths.browserGlobal) {
-                factory(umd.createDefine(browserGlobalIdentifier, paths.browserGlobal));
+                factory(umd.createDefine(registerFunc, identifier, paths.browserGlobal));
             }
             else {
-                factory(umd.createDefine(browserGlobalIdentifier));
+                factory(umd.createDefine(registerFunc, identifier));
             }
         }
     };
