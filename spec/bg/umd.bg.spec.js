@@ -252,6 +252,15 @@ describe("umd.stubRequire()", function() {
             done();
         });
     });
+
+    it("should reload dependencies if stubs is omitted.", function(done) {
+        var original = require('sampleModules/umd/withSecret');
+
+        umd.stubRequire(['sampleModules/umd/withSecret'], function(actual) {
+            actual().should.not.equal(original());
+            done();
+        });
+    });
 });
 
 describe("umd.ns()", function() {

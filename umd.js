@@ -142,13 +142,19 @@
     /**
      * Require dependencies while injects specified stubs.
      * @param {[]} deps Dependencies
-     * @param {object} stubs Stubs `{ "moduleA": stubA }`. Can be null, undefined, or empty object.
+     * @param {object} [stubs] Stubs `{ "moduleA": stubA }`. Can be null, undefined, or empty object.
      * In that case the deps will still be reloaded.
      * @param {function} callback The callback function.
      * @param {function} [errback] The error back function.
      * @returns {Function|*}
      */
     function stubRequire(deps, stubs, callback, errback) {
+        if (typeof arguments[1] === "function"){
+            stubs = undefined;
+            callback = arguments[1];
+            errback = arguments[2];
+        }
+
         if (!Array.isArray(deps)) {
             throw new Error("Dependencies must be an array.");
         }
