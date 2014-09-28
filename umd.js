@@ -567,6 +567,9 @@
             exports = arguments[4];
             module = arguments[5];
         }
+        else if (typeof registerFunc === "undefined") {
+            throw new Error("Invalid arguments");
+        }
 
         if (umd.isRequireJS()) {
             var localDefine = (paths && paths.requireJS) ?
