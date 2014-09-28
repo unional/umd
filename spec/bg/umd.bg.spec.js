@@ -339,5 +339,19 @@ describe("umd.require.config()", function() {
     it("should support full id mapping", function() {
         var actual = require('sampleModules/umd/mappedModule');
         actual().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction umd.exportsObject value");
-    }); 
+    });
+
+    it("should config the default instance if context is not supplied", function() {
+        var actual = require.config();
+        actual.should.equal(require);
+    });
+
+    it("should create a new require instance if context is supplied", function() {
+        var actual = require.config({ context: "TestContext"});
+        actual.should.not.equal(require);
+    });
+
+    it("should reload all files? Need to know what's the behavior in requireJS.");
+
+    // Need to write more tests when I have better understanding of how requireJS use this function.
 });

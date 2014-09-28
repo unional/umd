@@ -168,6 +168,7 @@
             }
 
             var context = contexts[stubContext] = new Context({
+                context: stubContext,
                 stubs: normalizedStubs,
                 paths: paths
             });
@@ -308,6 +309,7 @@
          * @returns {*}
          */
         this.require.config = function requireConfig(option) {
+            option = option || {};
             var context = contexts.default;
             if (option.context) {
                 context = contexts[option.context];
