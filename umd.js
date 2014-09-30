@@ -150,9 +150,9 @@
      */
     function stubRequire(deps, stubs, callback, errback) {
         if (typeof arguments[1] === "function"){
-            stubs = undefined;
-            callback = arguments[1];
             errback = arguments[2];
+            callback = arguments[1];
+            stubs = undefined;
         }
 
         if (!Array.isArray(deps)) {
@@ -345,9 +345,9 @@
             //createDefine(identifier, paths);
             //createDefine(identifier);
             if (typeof registerFunc === "string") {
-                registerFunc = undefined;
-                identifier = arguments[0];
                 paths = arguments[1];
+                identifier = arguments[0];
+                registerFunc = undefined;
             }
 
             return function browserGlobalDefine(definition) {
@@ -500,20 +500,20 @@
             if (typeof arguments[1] === "function" &&
                 typeof arguments[2] === "string"
             ) {
-                paths = null;
-                require = arguments[3];
-                exports = arguments[4];
                 module = arguments[5];
+                exports = arguments[4];
+                require = arguments[3];
+                paths = null;
             }
             else if (typeof arguments[1] === "string" &&
                      typeof arguments[2] === "object") {
                 // umd(factory, identifier, paths, require, exports, module)
-                registerFunc = undefined;
-                identifier = arguments[1];
-                paths = arguments[2];
-                require = arguments[3];
-                exports = arguments[4];
                 module = arguments[5];
+                exports = arguments[4];
+                require = arguments[3];
+                paths = arguments[2];
+                identifier = arguments[1];
+                registerFunc = undefined;
             }
             else {
                 throw new Error("Invalid arguments.");
@@ -522,21 +522,21 @@
         else if (arguments.length === 5) {
             if (typeof arguments[1] === "string") {
                 // umd(factory, identifier, require, exports, module)
-                registerFunc = null;
-                identifier = arguments[1];
-                paths = null;
-                require = arguments[2];
-                exports = arguments[3];
                 module = arguments[4];
+                exports = arguments[3];
+                require = arguments[2];
+                paths = null;
+                identifier = arguments[1];
+                registerFunc = null;
             }
             else if (typeof arguments[1] === "object") {
                 // umd(factory, paths, require, exports, module)
-                registerFunc = null;
-                identifier = null;
-                paths = arguments[1];
-                require = arguments[2];
-                exports = arguments[3];
                 module = arguments[4];
+                exports = arguments[3];
+                require = arguments[2];
+                paths = arguments[1];
+                identifier = null;
+                registerFunc = null;
             }
             else {
                 throw new Error("Invalid arguments");
@@ -544,12 +544,12 @@
         }
         else if (arguments.length === 4) {
             // umd(factory, require, exports, module)
-            registerFunc = null;
-            identifier = null;
-            paths = null;
-            require = arguments[1];
-            exports = arguments[2];
             module = arguments[3];
+            exports = arguments[2];
+            require = arguments[1];
+            paths = null;
+            identifier = null;
+            registerFunc = null;
         }
 
         if (umd.isRequireJS()) {
