@@ -254,6 +254,17 @@ define(function(require) {
                 done();
             });
         });
+
+        it("should stub require itself if stubs.require is defined", function(done) {
+            umd.stubRequire(['sampleModules/umd/defineFunctionWithDep'], {
+                "require": sinon.stub().returns(function() {
+                    return "Stubbed";
+                })
+            }, function(target) {
+                target().should.equal("Stubbed Stubbed");
+                done();
+            });
+        });
     });
 
     describe("umd.ns()", function() {

@@ -357,7 +357,18 @@
                     result = definition;
                 }
                 else {
-                    var localRequire = (paths) ? wrapRequire(self.require, paths) : self.require;
+                    var localRequire;
+                    // Stubbing require itself.
+                    if (self.config.stubs && self.config.stubs["require"]) {
+                        localRequire = self.config.stubs["require"];
+                    }
+                    else if (paths) {
+                        localRequire = wrapRequire(self.require, paths);
+                    }
+                    else {
+                        localRequire = self.require;
+                    }
+
                     result = definition(localRequire, module.exports, module);
                     result = (typeof result !== 'undefined') ? result : module.exports;
                 }
