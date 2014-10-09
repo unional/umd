@@ -1,7 +1,7 @@
 /*
  * Copyright(c) 2014, Unional (https://github.com/unional)
  * @license Licensed under the MIT License (https://github.com/unional/unional/LICENSE)).
- * @version 0.4.8
+ * @version 0.4.10
  * Created by unional on 9/21/14.
  */
 //noinspection ThisExpressionReferencesGlobalObjectJS
@@ -165,7 +165,7 @@
             contextCount++;
             var stubContext = 'stub' + contextCount;
 
-            var paths = contexts.default.config.paths;
+            var paths = contexts["default"].config.paths;
             var normalizedStubs = {};
             var key;
             for (key in stubs) {
@@ -180,7 +180,7 @@
             });
 
             // Optimize to skip module referencing if they are already referenced before.
-            context.modules = deepMerge(contexts.default.modules);
+            context.modules = deepMerge(contexts["default"].modules);
 
             context.setReloadTargets(deps.map(function(dep) {
                 return convertToBrowserGlobalIdentifier(dep, paths);
@@ -323,7 +323,7 @@
          */
         this.require.config = function requireConfig(option) {
             option = option || {};
-            var context = contexts.default;
+            var context = contexts["default"];
             if (option.context) {
                 context = contexts[option.context];
                 if (!context) {
@@ -471,7 +471,7 @@
         return module;
     };
 
-    contexts.default = new Context();
+    contexts["default"] = new Context();
 
     // ********** PUBLIC API ************
 
@@ -655,8 +655,8 @@
      */
     umd.globalRequire = (typeof require === "function") ? require : root.require;
 
-    umd.require = contexts.default.require;
-    umd.createDefine = contexts.default.createDefine;
+    umd.require = contexts["default"].require;
+    umd.createDefine = contexts["default"].createDefine;
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {
