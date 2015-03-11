@@ -87,7 +87,7 @@
                     };
 
                     // Wrap the definition method so that I can restore the makeRequire method
-                    // once the define() has everything setup.
+                    // once the define call has everything setup.
                     // requireJS looks at the params length to determine whether it is
                     // function (require) or function (require, exports, module)
                     // If params only have 'require', it will only load 'require' using deps.
@@ -108,35 +108,29 @@
     }
 
     function deepMerge(target, source) {
-        var result = {};
-        var key;
-
-        if (target && typeof target === 'object') {
-            for (key in target) {
-                if (target.hasOwnProperty(key)) {
-                    result[key] = target[key];
-                }
-            }
+        if (!target || !(typeof target === 'object' || typeof target === 'function')) {
+            // primitive type are immutable.
+            return target;
         }
 
-        for (key in source) {
+        for (var key in source) {
             if (source.hasOwnProperty(key)) {
                 var value = source[key];
                 if (typeof value !== 'object' || !value) {
-                    result[key] = value;
+                    target[key] = value;
                 }
                 else {
-                    if (!target[key]) {
-                        result[key] = value;
+                    if (target.hasOwnProperty(key)) {
+                        deepMerge(target[key], value);
                     }
                     else {
-                        result[key] = deepMerge(target[key], value);
+                        target[key] = value;
                     }
                 }
             }
         }
 
-        return result;
+        return target;
     }
 
     /**
@@ -383,7 +377,7 @@
                         var terms = identifier.split(/[.\/]/);
                         var id = terms.pop();
                         var base = umd.ns(terms.join("."));
-                        base[id] = result;
+                        base[id] = deepMerge(result, base[id]);
                     }
 
                     self.modules[identifier] = result;
@@ -595,17 +589,22 @@
      * Creates namespaces to be used for scoping variables and classes so that they are not global.
      * Specifying the last node of a namespace implicitly creates all other nodes.
      * Similar to Ext.ns() without the dependency.
-     * @param {...string} namespace
+     * @param {...string} ns namespace. Can't name it as "namespace" as it is a reserved word and it breaks strict mode in safari
      * @return {Object} The namespace object. (If multiple arguments are passed, this will be the last namespace created)
      * @method namespace
      */
-    umd.namespace = function namespace(namespace) {
+    umd.namespace = function namespace(ns) {
         var result;
         for (var i = 0, len = arguments.length; i < len; i++) {
-            namespace = arguments[i];
-            var components = namespace.split(/[.\/]/);
+            ns = arguments[i];
+            var components = ns.split(/[.\/]/);
 
             var component = components.shift();
+            if (component === "") {
+                result = root;
+                continue;
+            }
+
             result = root[component] = root[component] || {};
 
             while (components.length) {
