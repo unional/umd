@@ -200,7 +200,6 @@
                 }
             }
 
-            //if (hasStubs) {
             contextCount++;
             var contextName = "context_" + contextCount;
             var _config = require.s.contexts._.config;
@@ -266,17 +265,6 @@
             result(deps, thenable.callback, thenable.errback);
 
             return thenable.thenable;
-
-            //}
-            //else {
-            //    // There are no stubs. Remove cache and reload the modules in deps.
-            //    for (key in deps) {
-            //        if (deps.hasOwnProperty(key))
-            //            require.undef(deps[key]);
-            //    }
-            //
-            //    require(deps, callback, errback);
-            //}
         }
         else {
             // node
