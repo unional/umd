@@ -143,7 +143,7 @@
      * @returns {Function|*}
      */
     function stubRequire(deps, stubs, callback, errback) {
-        if (typeof arguments[1] === "function"){
+        if (typeof arguments[1] === "function") {
             errback = arguments[2];
             callback = arguments[1];
             stubs = undefined;
@@ -174,7 +174,7 @@
             });
 
             // Optimize to skip module referencing if they are already referenced before.
-            context.modules = deepMerge(contexts["default"].modules);
+            context.modules = deepMerge({}, contexts["default"].modules);
 
             context.setReloadTargets(deps.map(function(dep) {
                 return convertToBrowserGlobalIdentifier(dep, paths);
@@ -200,44 +200,83 @@
                 }
             }
 
+            //if (hasStubs) {
+            contextCount++;
+            var contextName = "context_" + contextCount;
+            var _config = require.s.contexts._.config;
+            var config = {
+                context: contextName,
+                baseUrl: _config.baseUrl,
+                paths: _config.paths,
+                pkgs: _config.pkgs,
+                shim: _config.shim
+            };
+
             if (hasStubs) {
-                contextCount++;
-                var contextName = "context_" + contextCount;
-                var _config = require.s.contexts._.config;
-                var config = {
-                    context: contextName,
-                    baseUrl: _config.baseUrl,
-                    paths: _config.paths,
-                    pkgs: _config.pkgs,
-                    shim: _config.shim
+                config.map = {
+                    "*": deepMerge(config.map || {}, map)
+                };
+            }
+
+            var result = require.config(config);
+
+            var parentDefined = require.s.contexts._.defined;
+            for (var m in parentDefined) {
+                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
+                    require.s.contexts[contextName].defined[m] = parentDefined[m];
+                }
+            }
+
+            function createThenable(callback, errback) {
+                var moduleResult = null;
+                var cbCalled = false;
+                var cb = function() {
+                    moduleResult = callback.apply(result, arguments);
+                    cbCalled = true;
+                    return moduleResult;
                 };
 
-                if (hasStubs) {
-                    config.map = {
-                        "*": map
-                    };
-                }
+                return {
+                    callback: cb,
+                    errback: errback,
+                    thenable: {
+                        then: function(thenCallback, thenErrback) {
+                            var thenable = createThenable(thenCallback, thenErrback);
+                            if (cbCalled) {
+                                //console.log(moduleResult);
 
-                var result = require.config(config);
+                                thenable.callback(moduleResult);
+                            }
+                            else {
+                                var handle = setInterval(function() {
+                                    if (cbCalled) {
+                                        clearInterval(handle);
+                                        thenable.callback(moduleResult);
+                                    }
+                                }, 0);
+                            }
 
-                var parentDefined = require.s.contexts._.defined;
-                for (var m in parentDefined) {
-                    if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
-                        require.s.contexts[contextName].defined[m] = parentDefined[m];
+                            return thenable.thenable;
+                        }
                     }
-                }
-
-                result(deps, callback, errback);
+                };
             }
-            else {
-                // There are no stubs. Remove cache and reload the modules in deps.
-                for (key in deps) {
-                    if (deps.hasOwnProperty(key))
-                        require.undef(deps[key]);
-                }
 
-                require(deps, callback, errback);
-            }
+            var thenable = createThenable(callback, errback);
+            result(deps, thenable.callback, thenable.errback);
+
+            return thenable.thenable;
+
+            //}
+            //else {
+            //    // There are no stubs. Remove cache and reload the modules in deps.
+            //    for (key in deps) {
+            //        if (deps.hasOwnProperty(key))
+            //            require.undef(deps[key]);
+            //    }
+            //
+            //    require(deps, callback, errback);
+            //}
         }
         else {
             // node
@@ -377,7 +416,10 @@
                         var terms = identifier.split(/[.\/]/);
                         var id = terms.pop();
                         var base = umd.ns(terms.join("."));
-                        base[id] = deepMerge(result, base[id]);
+                        // Skip if already defined (by umd.browserGlobal.define)
+                        if (base[id] !== result) {
+                            base[id] = deepMerge(result, base[id]);
+                        }
                     }
 
                     self.modules[identifier] = result;
@@ -624,6 +666,8 @@
     umd.isRequireJS = function isRequireJS() {
         return typeof define === "function" && define.amd != undefined;
     };
+    umd.isAmd = umd.isRequireJS;
+
     /**
      * Determine whether the environment is node.js
      * Technically this is also true for CommonJS but I named it as NodeJS because
@@ -635,16 +679,19 @@
                typeof exports === 'object' &&
                typeof module === 'object';
     };
+    umd.isCommonJS = umd.isNodeJS;
 
     /**
      * Determine whether the environment is browser global.
      * @returns {boolean}
      */
     umd.isBrowserGlobal = function isBrowserGlobal() {
-        return !umd.isRequireJS() && !umd.isNodeJS();
+        return !umd.isAmd() && !umd.isCommonJS();
     };
 
     umd.stubRequire = stubRequire;
+    umd.createContext = stubRequire;
+
     // require === func meaning it is node environment
     /**
      * Reference the global require function.
@@ -656,6 +703,25 @@
 
     umd.require = contexts["default"].require;
     umd.createDefine = contexts["default"].createDefine;
+
+    /**
+     * Specific functionality for browser global.
+     * @type {{}}
+     */
+    umd.browserGlobal = {
+        /**
+         * Force define the module at the specified path even it is not in browser global environment.
+         * @desc This is used to easily define sub-modules. Say you have module ABC defined and want to put ABC.DEF under it while having DEF in its own file.
+         * @param module
+         * @param path
+         */
+        define: function(module, path) {
+            var terms = path.split(/[.\/]/);
+            var id = terms.pop();
+            var base = umd.ns(terms.join("."));
+            base[id] = deepMerge(module, base[id]);
+        }
+    };
 
     //noinspection JSUnresolvedVariable
     if (typeof global !== 'undefined') {

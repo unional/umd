@@ -4,8 +4,6 @@
 * Created by hwong on 9/20/14.
 */
 define(function(require) {
-    "use strict";
-    require('umd');
     var when = require('when');
 
     //noinspection JSUnresolvedVariable

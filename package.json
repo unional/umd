@@ -4,7 +4,7 @@
   "description": "Write Universal Module Definition modules with ease",
   "main": "umd.js",
   "scripts": {
-    "test": "karma start spec/karma.amd.conf.js --single-run"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
@@ -20,9 +20,10 @@
   },
   "homepage": "https://github.com/unional/umd",
   "devDependencies": {
-    "chai": "^1.9.1",
-    "mocha": "^1.21.4",
-    "requirejs": "^2.1.15",
-    "when": "^3.4.6"
+    "when": "^3.4.6",
+    "karma-chai-plugins": "*",
+    "karma-mocha": "*",
+    "karma-requirejs": "*",
+    "karma-chrome-launcher": "*"
   }
 }

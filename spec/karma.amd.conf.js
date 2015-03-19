@@ -9,15 +9,17 @@ module.exports = function(config) {
 
         // frameworks to use
         // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-        frameworks: ['mocha', 'requirejs', 'sinon-chai'],
+        frameworks: ['mocha', 'requirejs', 'sinon-chai', 'chai'],
 
         // list of files / patterns to load in the browser
         files: [
             'spec/test-main.js',
             'umd.js',
+            {pattern: 'umd/*.js', included: false},
             {pattern: 'node_modules/sampleModules/**/*.js', included: false},
             {pattern: 'node_modules/when/**/*.js', included: false},
-            {pattern: 'spec/amd/*.js', included: false}
+            {pattern: 'spec/amd/*', included: false},
+            {pattern: 'spec/node/umd/*', included: false} // Have problem to instruct node/mocha to have multiple test directories. Let shared module test placed under node/umd to get around it.
         ],
 
         // list of files to exclude
@@ -50,6 +52,9 @@ module.exports = function(config) {
         // start these browsers
         // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
         browsers: ['Chrome'],
+
+        // If browser does not capture in given timeout [ms], kill it
+        captureTimeout: 60000,
 
         // Continuous Integration mode
         // if true, Karma captures browsers, runs the tests and exits

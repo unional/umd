@@ -14,6 +14,7 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files: [
             "umd.js",
+            "umd/createContext.js",
             "node_modules/sampleModules/umd/_umd.require.config.js",
             "node_modules/sampleModules/umd/defineFunction.js",
             "node_modules/sampleModules/umd/defineObject.js",
@@ -34,7 +35,8 @@ module.exports = function(config) {
             "node_modules/sampleModules/umd/withPath.js",
             "node_modules/sampleModules/umd/simplePlugin.js",
             "spec/lib/when.js",
-            "spec/bg/*.js"
+            "spec/bg/*.js",
+            "spec/node/umd/*.spec.js"
         ],
 
         // list of files to exclude

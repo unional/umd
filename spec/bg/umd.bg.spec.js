@@ -221,7 +221,6 @@ describe("umd.stubRequire()", function() {
         });
 
         d.promise.done(function() {
-            original = require('sampleModules/umd/defineFunctionWithDep');
             original().should.equal("Invoking umd.defineFunction Invoking umdv.defineFunction");
             done();
         });

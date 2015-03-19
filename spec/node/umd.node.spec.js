@@ -3,21 +3,6 @@
  * @license Licensed under the MIT License (https://github.com/unional/umd/LICENSE)).
  * Created by hwong on 9/20/14.
  */
-require('../../umd');
-var when = require('when');
-var chai = require('chai');
-chai.should();
-var expect = chai.expect;
-
-//noinspection JSUnresolvedVariable
-global.umdTest = {
-    test: {
-        something: {someProp: "someValue"},
-        someFunc: function(value) {
-            return value || "defaultValue"
-        }
-    }
-};
 
 describe("require() umd modules", function() {
     it("should get returnObject", function() {
