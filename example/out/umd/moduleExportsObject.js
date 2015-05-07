@@ -1,0 +1,1 @@
+define(["require","exports","module"],function(e,t,n){n.exports={value:"umd.moduleExportsObject value"}});

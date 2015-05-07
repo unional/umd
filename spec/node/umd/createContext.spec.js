@@ -9,7 +9,7 @@ umd(function(define) {
             it("should be defined", function() {
                 expect(umd.createContext).should.be.ok;
             });
-            it.only("should returns a promise/A+ thenable object", function() {
+            it("should returns a promise/A+ thenable object", function() {
                 var actual = umd.createContext([], function() { return 123; });
                 (typeof actual.then).should.be.equal("function");
                 return actual.then(function(result) {
@@ -22,6 +22,10 @@ umd(function(define) {
                     //done();
                 });
             });
+            //it("should throw error on level 1", function() {
+            //    var actual = umd.createContext([], function() { throw new Error("Test Error"); });
+            //
+            //});
         });
     });
 }, require, exports, module);

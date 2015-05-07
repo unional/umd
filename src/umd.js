@@ -133,63 +133,137 @@
         return target;
     }
 
+    function createDefer(callback, errback) {
+        var self = this;
+        var resolveResult;
+        var state = "pending";
+        var defer;
+        var handle;
+        function chainResolve() {
+            if (state !== "pending") {
+                clearInterval(handle);
+                if (state == "resolved")
+                {
+                    if (resolveResult && typeof resolveResult.then === "function" && resolveResult.then.length === 2) {
+                        resolveResult.then(defer.resolve, defer.reject);
+                    }
+                    else {
+                        defer.resolve(resolveResult);
+                    }
+                }
+                else
+                {
+                    defer.reject(resolveResult);
+                }
+            }
+        }
+        var result = {
+            resolve: function() {
+                try {
+                    resolveResult = callback.apply(self, arguments);
+                    state = "resolved";
+                    if (defer) {
+                        chainResolve();
+                    }
+                }
+                catch(e) {
+                    result.reject(e);
+                }
+            },
+            reject: function(error) {
+                if (errback) {
+                    errback.call(self, error);
+                }
+
+                resolveResult = error;
+                state = "rejected";
+            },
+            promise: {
+                then: function(thenCallback, thenErrback) {
+                    defer = createDefer(thenCallback, thenErrback);
+                    handle = setInterval(chainResolve, 0);
+
+                    return defer.promise;
+                }
+            }
+        };
+
+        return result;
+    }
+
     /**
      * Require dependencies while injects specified stubs.
      * @param {[]} deps Dependencies
-     * @param {object} [stubs] Stubs `{ "moduleA": stubA }`. Can be null, undefined, or empty object.
+     * @param {object} [config] Config
+     * @param {bool} [config.reloadAll] Whether to reload all modules. Default false.
+     * @param {object} [config.stubs] Stubs `{ "moduleA": stubA }`. Can be null, undefined, or empty object.
      * In that case the deps will still be reloaded.
      * @param {function} callback The callback function.
      * @param {function} [errback] The error back function.
      * @returns {Function|*}
      */
-    function stubRequire(deps, stubs, callback, errback) {
+    function stubRequire(deps, config, callback, errback) {
+        var stubs = null,
+            stubContext,
+            paths,
+            normalizedStubs,
+            key,
+            require,
+            context,
+            defer, map = {}, hasStubs = false, stubName, contextName, _config, newConfig, result, parentDefined, m, i, d;
         if (typeof arguments[1] === "function") {
             errback = arguments[2];
             callback = arguments[1];
-            stubs = undefined;
+            config = {};
+        }
+        else {
+            config = config || {};
+            stubs = config.stubs? config.stubs: config;
         }
 
         if (!Array.isArray(deps)) {
             throw new Error("Dependencies must be an array.");
         }
 
-        var require = umd.globalRequire;
+        require = umd.globalRequire;
         if (typeof require === "undefined" || require === umd.require) {
             // browser global
             contextCount++;
-            var stubContext = 'stub' + contextCount;
+            stubContext = 'stub' + contextCount;
 
-            var paths = contexts["default"].config.paths;
-            var normalizedStubs = {};
-            var key;
+            paths = contexts["default"].config.paths;
+            normalizedStubs = {};
             for (key in stubs) {
                 if (stubs.hasOwnProperty(key)) {
                     normalizedStubs[convertToBrowserGlobalIdentifier(key, paths)] = stubs[key];
                 }
             }
 
-            var context = contexts[stubContext] = new Context({
+            context = contexts[stubContext] = new Context({
                 stubs: normalizedStubs,
                 paths: paths
             });
 
             // Optimize to skip module referencing if they are already referenced before.
-            context.modules = deepMerge({}, contexts["default"].modules);
+            if (!config.reloadAll) {
+                context.modules = deepMerge({}, contexts["default"].modules);
 
-            context.setReloadTargets(deps.map(function(dep) {
-                return convertToBrowserGlobalIdentifier(dep, paths);
-            }));
+                context.setReloadTargets(deps.map(function (dep) {
+                    return convertToBrowserGlobalIdentifier(dep, paths);
+                }));
+            }
 
-            context.require(deps, callback, errback);
+            defer = createDefer(callback, errback);
+            context.require(deps, defer.resolve, defer.reject);
+
+            return defer.promise;
         }
         else if (require.defined) {
             // require.js
-            var map = {};
-            var hasStubs = false;
             for (key in stubs) {
                 if (stubs.hasOwnProperty(key)) {
                     hasStubs = true;
-                    var stubName = 'stub' + key + contextCount;
+                    stubName = 'stub' + key + contextCount;
                     map[key] = stubName;
                     (function(key) {
                         var value = stubs[key];
@@ -201,9 +275,9 @@
             }
 
             contextCount++;
-            var contextName = "context_" + contextCount;
-            var _config = require.s.contexts._.config;
-            var config = {
+            contextName = "context_" + contextCount;
+            _config = require.s.contexts._.config;
+            newConfig = {
                 context: contextName,
                 baseUrl: _config.baseUrl,
                 paths: _config.paths,
@@ -212,59 +286,35 @@
             };
 
             if (hasStubs) {
-                config.map = {
-                    "*": deepMerge(config.map || {}, map)
+                newConfig.map = (_config.map && _config.map["*"]) ?
+                {
+                    "*": deepMerge(_config.map["*"], map)
+                } :
+                {
+                    "*": map
                 };
             }
 
-            var result = require.config(config);
+            result = require.config(newConfig);
 
-            var parentDefined = require.s.contexts._.defined;
-            for (var m in parentDefined) {
-                if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
-                    require.s.contexts[contextName].defined[m] = parentDefined[m];
+            if (!newConfig.reloadAll) {
+                parentDefined = require.s.contexts._.defined;
+                for (m in parentDefined) {
+                    if (parentDefined.hasOwnProperty(m) && !map[m] && deps.indexOf(m) === -1) {
+                        require.s.contexts[contextName].defined[m] = parentDefined[m];
+                    }
+                }
+
+                for ( i = 0; i < deps.length; i++) {
+                    d = deps[i];
+                    require.s.contexts[contextName].require.undef(d);
                 }
             }
 
-            function createThenable(callback, errback) {
-                var moduleResult = null;
-                var cbCalled = false;
-                var cb = function() {
-                    moduleResult = callback.apply(result, arguments);
-                    cbCalled = true;
-                    return moduleResult;
-                };
+            defer = createDefer(callback, errback);
+            result(deps, defer.resolve, defer.reject);
 
-                return {
-                    callback: cb,
-                    errback: errback,
-                    thenable: {
-                        then: function(thenCallback, thenErrback) {
-                            var thenable = createThenable(thenCallback, thenErrback);
-                            if (cbCalled) {
-                                //console.log(moduleResult);
-
-                                thenable.callback(moduleResult);
-                            }
-                            else {
-                                var handle = setInterval(function() {
-                                    if (cbCalled) {
-                                        clearInterval(handle);
-                                        thenable.callback(moduleResult);
-                                    }
-                                }, 0);
-                            }
-
-                            return thenable.thenable;
-                        }
-                    }
-                };
-            }
-
-            var thenable = createThenable(callback, errback);
-            result(deps, thenable.callback, thenable.errback);
-
-            return thenable.thenable;
+            return defer.promise;
         }
         else {
             // node

@@ -1,0 +1,1 @@
+define(["require","sampleModules/umd/defineFunction","sampleModules/umdv/defineFunction"],function(e){var t=e("sampleModules/umd/defineFunction"),n=e("sampleModules/umdv/defineFunction");return function(){return t()+" "+n()}});

@@ -1,4 +1,4 @@
-# Write Universal Module Definition modules with ease
+I# Write Universal Module Definition modules with ease
 Umd is a small library that enables you to write umd modules easily. It supports:
 
 * AMD (requireJS)

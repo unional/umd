@@ -1,5 +1,5 @@
 var allTestFiles = [];
-var TEST_REGEXP = /(spec|amd)\.js$/i;
+var TEST_REGEXP = /\.js$/i;
 
 var pathToModule = function(path) {
     return path.replace(/^\/base\//, '').replace(/\.js$/, '');
@@ -15,9 +15,6 @@ Object.keys(window.__karma__.files).forEach(function(file) {
 require.config({
     // Karma serves files under /base, which is the basePath from your config file
     baseUrl: '/base',
-    paths: {
-        "sampleModules": "node_modules/sampleModules"
-    },
     packages: [
         {name: "when", location: "node_modules/when", main: "when"}
     ],

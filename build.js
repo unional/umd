@@ -5,6 +5,6 @@
  */
 //noinspection BadExpressionStatementJS
 ({
-    name: "umd",
+    name: "src/umd",
     out: "dist/umd.min.js"
 })

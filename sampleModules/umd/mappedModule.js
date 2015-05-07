@@ -13,6 +13,10 @@ umd(function(define) {
             }
         });
     }, "sampleModules.umd.mappedModule", {
+        requireJS: {
+            "sm": "sampleModules",
+            "func": "sampleModules/umd/defineFunction"
+        },
         browserGlobal: {
             "sm": "sampleModules",
             ".": "sampleModules/umd",

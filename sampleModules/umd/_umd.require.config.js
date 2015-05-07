@@ -8,4 +8,4 @@ umd.require.config({
         "sm": "sampleModules",
         "df": "sampleModules.umd.defineFunction"
     }
-})
+});

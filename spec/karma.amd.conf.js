@@ -14,10 +14,9 @@ module.exports = function(config) {
         // list of files / patterns to load in the browser
         files: [
             'spec/test-main.js',
-            'umd.js',
-            {pattern: 'umd/*.js', included: false},
-            {pattern: 'node_modules/sampleModules/**/*.js', included: false},
-            {pattern: 'node_modules/when/**/*.js', included: false},
+            'src/umd.js',
+            {pattern: 'sampleModules/**/*', included: false},
+            {pattern: 'node_modules/when/**/*', included: false},
             {pattern: 'spec/amd/*', included: false},
             {pattern: 'spec/node/umd/*', included: false} // Have problem to instruct node/mocha to have multiple test directories. Let shared module test placed under node/umd to get around it.
         ],
