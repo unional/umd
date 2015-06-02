@@ -19,7 +19,14 @@ In the package, you will find live templates (for phpStorm and webStorm), and r.
 
 ## Why would you use this module?
 ### Create modules that work in all environments
-duh...
+I'm aware of the UMD pattern. The difficulty I have with the UMD pattern is that it doesn't not support browser global properly. e.g.:
+
+You have a module under Company/app/components/compX.js which is Company.app.components.compX
+
+You can require it by require('Company/app/components/compX'); in AMD or CommonJS.
+But the code with this require will not work in environment that you loads the script files using script tags because the require method does not exist. You can't create a global require method to fake the code and do resolution either because a lot of 3rd party library doesn't do AMD/CommonJS detection properly (i.e., they just check whether if the require method exists).
+
+Therefore I wrote `write-umd` to solve that problem (and a much cleaner syntax IMO :P). It will detect which environment it is in and do the right thing.
 
 ### Write tests once that work in all enviornments
 Write your tests in umd and they will work in all enviornments.
@@ -32,14 +39,7 @@ You can use `write-umd` to incrementally convert your application/library to use
 
 	npm install write-umd		
 
-## Usage
-The easiest way is to use the included live template for phpStorm/webStorm to create the boilerplate for you.
-
-If none of your modules (including the external modules) use the `umd(...)` way to define module (i.e., using the more traditional umd `(function(define) {...}((function() {...}())))`), you don't need to follow the section below for specific usage. Just `require(...)` the module you want and they will just work.
-
-But of course, normally shoul can just `require('write-umd')` and don't have to worry about it.
-
-### Node.js
+## For Node.js
 At the beginning of your application, require the `write-umd` module before loading other modules written using `write-umd`. Since it does not have any dependency, you can safely require it first before anything else.
 
 	require('write-umd');
@@ -47,10 +47,10 @@ At the beginning of your application, require the `write-umd` module before load
 	
 It will export umd as a global object, so you don't need to create any variable for it. Optionally, you can still get the instance by `var umd = require('write-umd')`, but it is not really necesary.
 
-### Require.js
+## For Require.js
 You need to load the `write-umd` module before loading other modules that uses it.
 
-### r.js
+## For r.js
 You can add the `onBuildRead` method from the `sample/build.js` file to your `build.js`. It will strip out the umd(...) code and make the module work just like any amd module. 
 
 ## Test
