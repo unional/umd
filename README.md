@@ -1,9 +1,12 @@
-# Write Universal Module Definition modules with ease
-Umd is a small library that enables you to write umd modules easily. It supports:
-
+# Universal Module Definition library
+`unional-umd` is a small library that enables you to write true umd modules.  The code you wrote will work as-is in all **three** environments:
 * AMD (requireJS)
-* Node.js
-* Browser Global with namespace support.
+* CommonJS (NodeJS)
+* Legacy Browser global where you load your script manually through script tags.
+ 
+`unional-umd` has some advantage over the well known [umd pattern](https://github.com/umdjs/umd):
+* You don't have to choose which pattern you need to use to write your code. It will just work as-is
+* Your can reference code in brower global environment just like you are in AMD or CommonJS (i.e. `require("Your/namespace/module")`)
 
 The easiest way to use it is writing your module like this:
 
@@ -11,33 +14,23 @@ The easiest way to use it is writing your module like this:
 		define(function(require, exports, module) {
 			// your code here
 		});
-	}, "Namespace.Enabled.BrowserGlobalPath.Of.YourModule", require, exports, module);
+	}, "Namespace.enabled.browserGlobalPath.of.yourModule", require, exports, module);
 
 You can also write your module in the traditional umd style and use some of the helper functions from `umd` to make it easier.
 
 In the package, you will find live templates (for phpStorm and webStorm), and r.js build config, etc.
 
-## Why would you use this module?
-### Create modules that work in all environments
-I'm aware of the UMD pattern. The difficulty I have with the UMD pattern is that it doesn't not support browser global properly. e.g.:
 
-You have a module under Company/app/components/compX.js which is Company.app.components.compX
-
-You can require it by require('Company/app/components/compX'); in AMD or CommonJS.
-But the code with this require will not work in environment that you loads the script files using script tags because the require method does not exist. You can't create a global require method to fake the code and do resolution either because a lot of 3rd party library doesn't do AMD/CommonJS detection properly (i.e., they just check whether if the require method exists).
-
-Therefore I wrote `unional-umd` to solve that problem (and a much cleaner syntax IMO :P). It will detect which environment it is in and do the right thing.
-
-### Write tests once that work in all enviornments
+## Write tests once that work in all enviornments
 Write your tests in umd and they will work in all enviornments.
 `unional-umd` also supports stubbing dependencies through `umd.stubRequire` or `umd.createContext` which also works in requireJS and browser global environment (NodeJS will be supported in the future)
 
-### Convert from browser global to amd/commonJS
+## Convert from browser global to amd/commonJS
 You can use `unional-umd` to incrementally convert your application/library to use amd or commonJS. What you need to do is load `unional-umd` and convert each file one at a time. When you changed your whole application to umd, you can switch over to amd (requireJS) or commonJS (node-browserify).
 
-## Installation
+# Installation
 
-	npm install unional-umd	//or
+	npm install unional-umd
 	bower install unional-umd
 
 ## For Node.js
@@ -52,7 +45,8 @@ It will export umd as a global object, so you don't need to create any variable 
 You need to load the `unional-umd` module before loading other modules that uses it.
 
 ## For r.js
-You can add the `onBuildRead` method from the `sample/build.js` file to your `build.js`. It will strip out the umd(...) code and make the module work just like any amd module. 
+The code you write would work as is.  You can additional do the following to remove the `umd(...)` wrapping code and mke it look just like other AMD modules:
+* Add the `onBuildRead` method from the `sample/build.js` file to your `build.js`.
 
 ## Test
 There are 5 set of tests in the package:
