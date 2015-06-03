@@ -26,29 +26,30 @@ You have a module under Company/app/components/compX.js which is Company.app.com
 You can require it by require('Company/app/components/compX'); in AMD or CommonJS.
 But the code with this require will not work in environment that you loads the script files using script tags because the require method does not exist. You can't create a global require method to fake the code and do resolution either because a lot of 3rd party library doesn't do AMD/CommonJS detection properly (i.e., they just check whether if the require method exists).
 
-Therefore I wrote `write-umd` to solve that problem (and a much cleaner syntax IMO :P). It will detect which environment it is in and do the right thing.
+Therefore I wrote `unional-umd` to solve that problem (and a much cleaner syntax IMO :P). It will detect which environment it is in and do the right thing.
 
 ### Write tests once that work in all enviornments
 Write your tests in umd and they will work in all enviornments.
-`write-umd` also supports stubbing dependencies through `umd.stubRequire` which also works in requireJS and browser global environment (NodeJS will be supported in the future)
+`unional-umd` also supports stubbing dependencies through `umd.stubRequire` or `umd.createContext` which also works in requireJS and browser global environment (NodeJS will be supported in the future)
 
 ### Convert from browser global to amd/commonJS
-You can use `write-umd` to incrementally convert your application/library to use amd or commonJS. What you need to do is load `write-umd` and convert each file one at a time. When you changed your whole application to umd, you can switch over to amd (requireJS) or commonJS (node-browserify).
+You can use `unional-umd` to incrementally convert your application/library to use amd or commonJS. What you need to do is load `unional-umd` and convert each file one at a time. When you changed your whole application to umd, you can switch over to amd (requireJS) or commonJS (node-browserify).
 
 ## Installation
 
-	npm install write-umd		
+	npm install unional-umd	//or
+	bower install unional-umd
 
 ## For Node.js
-At the beginning of your application, require the `write-umd` module before loading other modules written using `write-umd`. Since it does not have any dependency, you can safely require it first before anything else.
+At the beginning of your application, require the `unional-umd` module before loading other modules written using `write-umd`. Since it does not have any dependency, you can safely require it first before anything else.
 
-	require('write-umd');
+	require('unional-umd');
 	// require other modules
 	
-It will export umd as a global object, so you don't need to create any variable for it. Optionally, you can still get the instance by `var umd = require('write-umd')`, but it is not really necesary.
+It will export umd as a global object, so you don't need to create any variable for it. Optionally, you can still get the instance by `var umd = require('unional-umd')`, but it is not really necesary.
 
 ## For Require.js
-You need to load the `write-umd` module before loading other modules that uses it.
+You need to load the `unional-umd` module before loading other modules that uses it.
 
 ## For r.js
 You can add the `onBuildRead` method from the `sample/build.js` file to your `build.js`. It will strip out the umd(...) code and make the module work just like any amd module. 
