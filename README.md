@@ -1,4 +1,7 @@
 # Universal Module Definition library
+
+> This project id deprecated in favor of using [jspm](https://github.com/jspm/jspm-cli)
+
 `unional-umd` is a small library that enables you to write true umd modules.  The code you wrote will work as-is in all **three** environments:
 * AMD (requireJS)
 * CommonJS (NodeJS)
