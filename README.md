@@ -1,5 +1,7 @@
 # Universal Module Definition library
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/unional/umd.svg)](https://greenkeeper.io/)
+
 > This project is deprecated in favor of using [jspm](https://github.com/jspm/jspm-cli)
 
 `unional-umd` is a small library that enables you to write true umd modules.  The code you wrote will work as-is in all **three** environments:
